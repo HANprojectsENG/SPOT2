@@ -68,6 +68,24 @@ class CentroidTracker{
     update(rects)
 }
 
+class MainWindow{
+    name
+    closing
+    message
+    image
+    --
+    __init__()
+    initUI()
+    imgUpdate()
+    kickTimer()
+    temperatureUpdate(temp)
+    wheelEvent(event)
+    closeEvent(event)
+    snapshot()
+    loadSettings()
+    saveSettings()
+}
+
 BlobDetector -up-|> Manipulator
 ImgEnhancer -up-|> Manipulator
 ImgSegmenter -up-|> Manipulator
@@ -75,4 +93,5 @@ BlobDetector --* Image
 ImgSegmenter --* Image
 ImgEnhancer --* Image
 Image -right-o CentroidTracker
+Image -left-o MainWindow
 @@enduml
