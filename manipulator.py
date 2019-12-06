@@ -6,17 +6,18 @@ class Manipulator(ABC):
     """Documentation for a class.
  
     More details.
-    """    
-    message = pyqtSignal(str)  # Message signal
-    ready = pyqtSignal()
-    processsingTime = 0 # processing time [ms]
-    startTime = 0
-    name = None    
+    """      
 
     def __init__(Name, Image):
-        self.name = Name
-        self.image = Image
+        """The constructor."""        
         super(Manipulator,self).__init__()
+        self.name = Name
+        self.show = False # Show intermediate results
+        self.image = Image
+        self.processsingTime = 0 # processing time [ms]
+        self.startTime = 0
+        self.message = pyqtSignal(str) # Message signal
+        self.ready = pyqtSignal()
     
     @pyqtSlot()
     def show(self):

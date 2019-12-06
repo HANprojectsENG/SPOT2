@@ -31,35 +31,50 @@ class ImgEnhancer(Manipulator):
         self.rotAngle = 0.0
         self.gamma = 1.0                
         self.clahe = None
+        self.shape = None
         
     def __del__(self):
         """The deconstructor."""
         None    
         
-    def start(self):
+    def start(self, image):
         """Image processing function."""        
         try:
-            if self.image is not None:
-                self.startTimer()
+            if image is not None:
+                self.startTimer()                
                 self.message.emit("Info: " + self.__name__ + ": started.")
-                if len(self.image.shape) > 2:  # if color image
-                    self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)  # convert to gray scale image
-                self.image = self.image[self.cropRect[0]:self.cropRect[2], self.cropRect[1]:self.cropRect[3]] # crop the image
-                if abs(self.rotAngle) > 0.0:
-                    self.image = rotateImage(self.image, self.rotAngle)  # rotate
-                    deltaw = int(.5*np.round(np.arcsin(np.pi*np.abs(self.rotAngle)/180)*self.image.shape[0]))
-                    deltah = int(.5*np.round(np.arcsin(np.pi*np.abs(self.rotAngle)/180)*self.image.shape[1]))
-                    self.image = self.image[+deltah:-deltah, +deltaw:-deltaw]  # autocrop when rotated
-                if self.clahe is not None:
-                    self.image = self.clahe.apply(self.image)  # Contrast Limited Adaptive Histogram Equalization.
-                if self.gamma > 1.0:
-                    self.image = adjust_gamma(self.image, self.gamma)  # change gamma
-##                self.image = cv2.equalizeHist(self.image)  # histogram equalization
+
+                self.shape = image.shape
+                
+                if len(self.shape) > 2:  # if color image
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # convert to gray scale image
+                    
+                if abs(self.rotAngle) > 0.0:  # rotate
+                    image = rotateImage(image, self.rotAngle)
+                    
+                    deltaw = int(.5*np.round(np.arcsin(np.pi*np.abs(self.rotAngle)/180)*image.shape[0]))
+                    deltah = int(.5*np.round(np.arcsin(np.pi*np.abs(self.rotAngle)/180)*image.shape[1]))
+                    
+                image = image[self.cropRect[0] + deltah:self.cropRect[2] - deltah,
+                              self.cropRect[1] + deltaw:self.cropRect[3] - deltaw] # crop the image
+                
+                if self.clahe is not None:  # Contrast Limited Adaptive Histogram Equalization.
+                    image = self.clahe.apply(image)
+                    
+                if self.gamma > 1.0:  # change gamma
+                    image = adjust_gamma(image, self.gamma)
+                    
+                if self.show:
+                    self.image = image.copy()
+                    
                 self.stopTimer()
-                self.message.emit("Info: " + self.__name__ + ": processing delay = " + str(self.processsingTime) + " ms")
+                self.message.emit("Info: " + self.__name__ + ": processing delay = " + str(self.processsingTime) + " ms")                
                 self.ready.emit()
-        except Exception as err:
+                
+        except Exception as err:            
             self.message.emit("Error: " + self.__name__ + " " + str(err))
+            
+        return image
         
     @pyqtSlot(float)
     def setRotateAngle(self, angle):
@@ -98,7 +113,7 @@ class ImgEnhancer(Manipulator):
     @pyqtSlot(int)
     def setCropXp2(self, val):
         """ """        
-        if self.cropRect[1] < val < self.image.shape[1]:            
+        if self.cropRect[1] < val < self.shape[1]:            
             self.cropRect[3] = val
         else:
             self.message.emit("Error: " + self.__name__)
@@ -114,7 +129,7 @@ class ImgEnhancer(Manipulator):
     @pyqtSlot(int)
     def setCropYp2(self, val):
         """ """        
-        if self.cropRect[0] < val < self.image.shape[0]:
+        if self.cropRect[0] < val < self.shape[0]:
             self.cropRect[2] = val            
         else:
             self.message.emit("Error: " + self.__name__)
