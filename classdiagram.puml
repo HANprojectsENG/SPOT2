@@ -92,6 +92,6 @@ ImgSegmenter -up-|> Manipulator
 BlobDetector --* Image
 ImgSegmenter --* Image
 ImgEnhancer --* Image
-Image -right-o CentroidTracker
+Image <.right. CentroidTracker
 Image -left-o MainWindow
 @@enduml
