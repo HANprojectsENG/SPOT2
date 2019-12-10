@@ -11,6 +11,7 @@ import cv2
 from mainWindow import MainWindow
 from checkOS import is_raspberry_pi
 from imageProcessor import ImageProcessor
+from centroidtracker import CentroidTracker
 # system dependent imports
 if is_raspberry_pi():
     from pyqtpicam import PiVideoStream
@@ -29,6 +30,7 @@ main application
 app = QApplication([])
 window = MainWindow()
 processor = ImageProcessor()
+tracker = CentroidTracker()
 
 # Instantiate objects
 if is_raspberry_pi():
@@ -68,6 +70,9 @@ window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector
 window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
 #vs.ready.connect(lambda: processor.imgUpdate(vs.frame), type.Qt.BlockingQueue)
+#processor.ready.connect(lambda: tracker.update(processor.Detector.rects)
+# , type=QueuedConnection)
+
 vs.signals.message.connect(window.print_output)
 vs.signals.progress.connect(window.progress_fn)
 vs.signals.error.connect(window.error_output)

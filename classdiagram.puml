@@ -44,7 +44,7 @@ class BlobDetector{
     find1DGrid(data, N)
 }
 
-class Image{
+class ImgProcessor{
     image
     RoI
     rectsList
@@ -89,9 +89,9 @@ class MainWindow{
 BlobDetector -up-|> Manipulator
 ImgEnhancer -up-|> Manipulator
 ImgSegmenter -up-|> Manipulator
-BlobDetector --* Image
-ImgSegmenter --* Image
-ImgEnhancer --* Image
-Image <.right. CentroidTracker
-Image -left-o MainWindow
+BlobDetector --* ImgProcessor
+ImgSegmenter --* ImgProcessor
+ImgEnhancer --* ImgProcessor
+ImgProcessor <.right. CentroidTracker
+ImgProcessor -left-o MainWindow
 @@enduml
