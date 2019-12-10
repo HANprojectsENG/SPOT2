@@ -44,7 +44,8 @@ else:
     vs = VideoStream(filename, resolution=(WIDTH, HEIGHT), monochrome=True)
 
 # Start video stream
-vs.start()
+vs.start(QThread.HighPriority)
+processor.start(QThread.HighPriority)
 
 # Connect video/image stream to processing (Qt.BlockingQueuedConnection or QueuedConnection?)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
@@ -66,6 +67,7 @@ window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.se
 window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
 window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
+#vs.ready.connect(lambda: processor.imgUpdate(vs.frame), type.Qt.BlockingQueue)
 vs.signals.message.connect(window.print_output)
 vs.signals.progress.connect(window.progress_fn)
 vs.signals.error.connect(window.error_output)

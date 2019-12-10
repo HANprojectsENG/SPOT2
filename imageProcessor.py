@@ -27,16 +27,17 @@ class ImageProcessor(QThread):
 
     '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, Image):
         super().__init__()
 
         self.name = 'image processor'
-        self.image = None
+        self.image = Image
         self.signals = ObjectSignals()
         self.isStopped = False
         self.Enhancer = ImgEnhancer()
         self.Segmentor = ImgSegmenter()
         self.Detector = BlobDetector()
+        self.rects
 
     def __del__(self):
         None
@@ -45,26 +46,26 @@ class ImageProcessor(QThread):
     @Slot(np.ndarray)
     # Note that we need this wrapper around the Thread run function, since the latter will not accept any parameters
     def update(self, image=None): 
-        try:
-            self.enhancer = ImageEnhancer(image,
-                                          cropRect = (0,0,image.shape[0],image.shape[1]),
-                                          rotAngle = self.rotAngle)
-            self.enhancer.signals.finished.connect(self.signals.finished.emit)
-            self.enhancer.signals.message.connect(lambda message=str: self.signals.message.emit(message))
-            self.enhancer.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
+#         try:
+#             self.enhancer = ImageEnhancer(image,
+#                                           cropRect = (0,0,image.shape[0],image.shape[1]),
+#                                           rotAngle = self.rotAngle)
+#             self.enhancer.signals.finished.connect(self.signals.finished.emit)
+#             self.enhancer.signals.message.connect(lambda message=str: self.signals.message.emit(message))
+#             self.enhancer.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
             
-            # set cropping rectangle
-##            self.enhancer.setCropRect((0,0,image.shape[0],image.shape[1]))
+#             # set cropping rectangle
+# ##            self.enhancer.setCropRect((0,0,image.shape[0],image.shape[1]))
 
-            if self.isRunning():  # thread is already running
-                # drop frame
-                self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
-            elif image is not None:  # we have a new image
-                self.image = image #.copy()
-                self.start()
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+#             if self.isRunning():  # thread is already running
+#                 # drop frame
+#                 self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
+#             elif image is not None:  # we have a new image
+#                 self.image = image #.copy()
+#                 self.start()
+#         except Exception as err:
+#             traceback.print_exc()
+#             self.signals.error.emit((type(err), err.args, traceback.format_exc()))
 
     # @Slot(float)
     # def setRotateAngle(self, val):
@@ -83,24 +84,26 @@ class ImageProcessor(QThread):
     #         self.gamma = val
         
     @Slot()
-    def run(self):
+    def start(self):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
-        if not self.isStopped:
+        # if not self.isStopped:
             
-            self.signals.message.emit('Running worker "{}"\n'.format(self.name))
+        #     self.signals.message.emit('Running worker "{}"\n'.format(self.name))
             
-            # Retrieve args/kwargs here; and fire processing using them
-            try:
-                result = self.enhancer.start()
-            except Exception as err:
-                traceback.print_exc()
-                self.signals.error.emit((type(err), err.args, traceback.format_exc()))
-            else:
-                self.signals.result.emit(result)  # Return the result of the processing
-            finally:
-                self.signals.finished.emit()  # Done
+        #     # Retrieve args/kwargs here; and fire processing using them
+        #     try:
+        #         result = self.enhancer.start()
+        #     except Exception as err:
+        #         traceback.print_exc()
+        #         self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        #     else:
+        #         self.signals.result.emit(result)  # Return the result of the processing
+        #     finally:
+        #         self.signals.finished.emit()  # Done
+        img = self.Segmentor.start(self.Enhancer.start(self.image))
+        imgProcessed, self.rects = self.Detector.start(img)
 
     @Slot()
     def stop(self):
@@ -108,5 +111,10 @@ class ImageProcessor(QThread):
             self.signals.message.emit('Stopping worker "{}"\n'.format(self.name))
             self.isStopped = True
             self.quit()
+
+    @Slot()
+    def showTracked(self):
+        #show tracked objects
+
             
 

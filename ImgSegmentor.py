@@ -99,5 +99,8 @@ class ImgSegmenter(Manipulator):
                 self.message.emit(self.name + ": processing delay = " + str(self.procMillis) + " ms")
                 self.running = False
                 self.ready.emit()
+
+                # return image
+                
         except Exception as err:
             self.message.emit("Error in " + self.name)
