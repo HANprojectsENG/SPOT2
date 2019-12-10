@@ -32,9 +32,14 @@ processor = ImageProcessor()
 
 # Instantiate objects
 if is_raspberry_pi():
-    vs = PiVideoStream(resolution=(WIDTH, HEIGHT), monochrome=True, framerate=FRAME_RATE, effect='blur', use_video_port=USE_VIDEO_PORT)
+    vs = PiVideoStream(resolution=(WIDTH, HEIGHT), monochrome=True, 
+    framerate=FRAME_RATE, effect='blur', use_video_port=USE_VIDEO_PORT)
+    pio = pigpio.pi()
+    vc = VoiceCoil(pio)
+    heater = Heater(pio, 2000)
 else:
-    filename, _ = QFileDialog.getOpenFileName(caption='Open file', dir='.', filter='*.mp4')
+    filename, _ = QFileDialog.getOpenFileName(caption='Open file', dir='.'
+    , filter='*.mp4')
     print(filename)
     vs = VideoStream(filename, resolution=(WIDTH, HEIGHT), monochrome=True)
 
@@ -45,7 +50,22 @@ vs.start()
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
 
 # Connect GUI signals and slots
-window.rotateSpinBox.valueChanged.connect(processor.setRotateAngle)
+window.rotateSpinBox.valueChanged.connect(processor.Enhancer.setRotateAngle)
+window.gammaSpinBox.valueChanged.connect(processor.Enhancer.setGamma)
+window.claheSpinBox.valueChanged.connect(processor.Enhancer.setClaheClipLimit)
+
+if is_raspberry_pi():
+    window.VCSpinBox.valueChanged.connect(vc.setVal)
+    window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
+
+window.cropXp1Spinbox.valueChanged.connect(processor.Enhancer.setCropXp1)
+window.cropYp1Spinbox.valueChanged.connect(processor.Enhancer.setCropYp1)
+window.cropXp2Spinbox.valueChanged.connect(processor.Enhancer.setCropXp2)
+window.cropYp2Spinbox.valueChanged.connect(processor.Enhancer.setCropYp2)
+window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.setOffset)
+window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
+window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
+
 vs.signals.message.connect(window.print_output)
 vs.signals.progress.connect(window.progress_fn)
 vs.signals.error.connect(window.error_output)

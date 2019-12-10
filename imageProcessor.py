@@ -9,7 +9,9 @@ from PySide2.QtCore import *
 import numpy as np
 import cv2
 import traceback
-from imageEnhancer import ImageEnhancer
+from enhancer import ImgEnhancer
+from ImgSegmentor import ImgSegmenter
+from BlobDetector import BlobDetector
 from objectSignals import ObjectSignals
 
 
@@ -32,22 +34,9 @@ class ImageProcessor(QThread):
         self.image = None
         self.signals = ObjectSignals()
         self.isStopped = False
-
-        # Store constructor arguments (re-used for processing)
-        self.args = args
-        self.kwargs = kwargs
-        
-        # Set crop area to (p1_y, p1_x, p2_y, p2_x)
-        self.cropRect = kwargs['cropRect'] if 'cropRect' in kwargs else [0,0,0,0]
-
-        # Set rotation angle, sometimes strange behaviour, and rounding seems required
-        self.rotAngle = round(kwargs['rotAngle'], 1) if 'rotAngle' in kwargs else 0.0 
-
-        # Set threshold for contrast limiting
-        self.clahe = cv2.createCLAHE(clipLimit=kwargs['clahe'], tileGridSize=(8,8)) if 'clahe' in kwargs else None
-
-        # Set gamma correction
-        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 1.0 
+        self.Enhancer = ImgEnhancer()
+        self.Segmentor = ImgSegmenter()
+        self.Detector = BlobDetector()
 
     def __del__(self):
         None
@@ -77,21 +66,21 @@ class ImageProcessor(QThread):
             traceback.print_exc()
             self.signals.error.emit((type(err), err.args, traceback.format_exc()))
 
-    @Slot(float)
-    def setRotateAngle(self, val):
-        try:
-            if -5.0 <= val <= 5.0:
-                self.rotAngle = round(val, 1)  # strange behaviour, and rounding seems required
-            else:
-                raise ValueError('rotation angle')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))      
+    # @Slot(float)
+    # def setRotateAngle(self, val):
+    #     try:
+    #         if -5.0 <= val <= 5.0:
+    #             self.rotAngle = round(val, 1)  # strange behaviour, and rounding seems required
+    #         else:
+    #             raise ValueError('rotation angle')
+    #     except Exception as err:
+    #         traceback.print_exc()
+    #         self.signals.error.emit((type(err), err.args, traceback.format_exc()))      
 
-    @Slot(float)
-    def setGamma(self, val):
-        if 0.0 <= val <= 10.0:
-            self.gamma = val
+    # @Slot(float)
+    # def setGamma(self, val):
+    #     if 0.0 <= val <= 10.0:
+    #         self.gamma = val
         
     @Slot()
     def run(self):
