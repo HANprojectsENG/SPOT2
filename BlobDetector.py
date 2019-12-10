@@ -1,3 +1,5 @@
+"""@package docstring
+""" 
 import numpy as np
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 import matplotlib.pyplot as plt
@@ -6,7 +8,13 @@ import time
 import cv2
 from manipulator import Manipulator
 
+
 class BlobDetector(Manipulator):
+    """Object detector
+        detects blobs
+
+        \param image (the enhanced and segmented image)
+        \return rects (the detected blobs in rectangles)"""
     ## Logging message signal
     message = pyqtSignal(str)  # Message signal
     ## Image signal as numpy array
@@ -30,6 +38,8 @@ class BlobDetector(Manipulator):
         if self.doPlot:
             cv2.namedWindow(self.name)
             plt.show(block=False)
+
+        """TODO: Add var rects -> detected blobs/rectangles"""
             
     @pyqtSlot(np.ndarray)
     def start(self, image=None, ROIs=None):

@@ -84,7 +84,7 @@ class ImageProcessor(QThread):
     #         self.gamma = val
         
     @Slot()
-    def start(self):
+    def run(self):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
@@ -102,8 +102,9 @@ class ImageProcessor(QThread):
         #         self.signals.result.emit(result)  # Return the result of the processing
         #     finally:
         #         self.signals.finished.emit()  # Done
-        img = self.Segmentor.start(self.Enhancer.start(self.image))
-        imgProcessed, self.rects = self.Detector.start(img)
+        imgEnhanced = self.Segmentor.start(self.image)
+        imgSegmented = self.Segmentor.start(imgEnhanced)
+        imgProcessed = self.Detector.start(imgSegmented)
 
     @Slot()
     def stop(self):

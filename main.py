@@ -1,5 +1,4 @@
 """@package docstring
-test
 """ 
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
@@ -68,6 +67,8 @@ window.cropYp2Spinbox.valueChanged.connect(processor.Enhancer.setCropYp2)
 window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.setOffset)
 window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
 window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
+
+"""TODO:connect signals to the corresponding objects"""
 
 #vs.ready.connect(lambda: processor.imgUpdate(vs.frame), type.Qt.BlockingQueue)
 #processor.ready.connect(lambda: tracker.update(processor.Detector.rects)

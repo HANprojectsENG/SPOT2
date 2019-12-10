@@ -1,3 +1,6 @@
+"""@package docstring
+""" 
+
 import numpy as np
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 import matplotlib.pyplot as plt
@@ -7,6 +10,11 @@ import cv2
 from manipulator import Manipulator
 
 class ImgSegmenter(Manipulator):
+    """Image segmentor
+
+        \param image
+        \return image
+        """
     ## Logging message signal
     message = pyqtSignal(str)  # Message signal
     ready = pyqtSignal()
@@ -101,6 +109,6 @@ class ImgSegmenter(Manipulator):
                 self.ready.emit()
 
                 # return image
-                
+
         except Exception as err:
             self.message.emit("Error in " + self.name)
