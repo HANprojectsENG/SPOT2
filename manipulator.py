@@ -9,12 +9,12 @@ class Manipulator(ABC):
     More details.
     """      
 
-    def __init__(self, Name, Image):
+    def __init__(self, Name):
         """The constructor."""        
         super(Manipulator,self).__init__()
         self.name = Name
+        self.image = None
         self.show = False # Show intermediate results
-        self.image = Image
         self.processsingTime = 0 # processing time [ms]
         self.startTime = 0
         self.signals = ObjectSignals()    

@@ -12,9 +12,9 @@ Auto-crop, e.g. fixed, or based on rotate and on info obtained further down the 
 import numpy as np
 from PySide2.QtCore import *
 import cv2
-from manipulator import Manipulator
 import inspect
 import traceback
+from manipulator import Manipulator
 
 class ImageEnhancer(Manipulator):
     """Image enhancer
@@ -23,12 +23,9 @@ class ImageEnhancer(Manipulator):
      
     More details.
     """
-    def __init__(self, Image, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """The constructor."""
-        super().__init__('image enhancer', Image)
-
-        # Deep copy
-        self.image = Image.copy() if 'show' in kwargs else Image
+        super().__init__('image enhancer')
 
         # Set crop area to (p1_y, p1_x, p2_y, p2_x)
         self.cropRect = kwargs['cropRect'] if 'cropRect' in kwargs else [0,0,0,0]
@@ -40,22 +37,26 @@ class ImageEnhancer(Manipulator):
         self.clahe = cv2.createCLAHE(clipLimit=kwargs['clahe'], tileGridSize=(8,8)) if 'clahe' in kwargs else None
 
         # Set gamma correction
-        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 1.0 
-        
+        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 1.0           
+       
     def __del__(self):
         """The deconstructor."""
         None    
         
-    def start(self):
+    def start(self, Image):
         """Image processing function."""        
         try:
             self.startTimer()                
-            self.signals.message.emit('I: {} started'.format(self.name))
-            
-            self.shape = self.image.shape
-            
+            self.signals.message.emit('I: {} started'.format(self.name))            
+            self.image = Image
+
+            if self.cropRect[2] == 0:
+                self.cropRect[2] = self.image.shape[0]
+            if self.cropRect[3] == 0:
+                self.cropRect[3] = self.image.shape[1]
+
             # Convert to gray scale
-            if len(self.shape) > 2:  # if color image
+            if len(self.image.shape) > 2:  # if color image
                 self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
             # Rotate
@@ -71,8 +72,9 @@ class ImageEnhancer(Manipulator):
             # Crop
             p1_y = self.cropRect[0] + deltah
             p1_x = self.cropRect[1] + deltaw
-            p2_y = self.cropRect[2] - deltah
-            p2_x = self.cropRect[3] - deltaw
+            p2_y = self.image.shape[0] - deltah if self.cropRect[2] == 0 else self.cropRect[2] - deltah
+            p2_x = self.image.shape[1] - deltaw if self.cropRect[3] == 0 else self.cropRect[3] - deltaw
+
             if (p2_y > p1_y) and (p2_x > p1_x):
                 self.image = self.image[p1_y:p2_y, p1_x:p2_x]
             
@@ -80,7 +82,7 @@ class ImageEnhancer(Manipulator):
             if self.clahe is not None:  
                 self.image = self.clahe.apply(image)
                 
-            # Change gamma
+            # Change gamma correction
             if 1.0 < self.gamma < 10.0:  
                 self.image = adjust_gamma(self.image, self.gamma)
 
@@ -95,3 +97,91 @@ class ImageEnhancer(Manipulator):
             self.signals.message.emit('E: {} exception: {}'.format(self.name, err))
 
         return self.image
+
+    def adjust_gamma(image, gamma=1.0):
+       invGamma = 1.0 / gamma
+       table = np.array([((i / 255.0) ** invGamma) * 255
+    ##   table = np.array([(  np.log(1.0 + i/255.0)*gamma) * 255  # log transform
+          for i in np.arange(0, 256)]).astype("uint8")
+       return cv2.LUT(image, table)
+       
+
+    @Slot(float)
+    def setRotateAngle(self, val):
+        try:
+            if -5.0 <= val <= 5.0:
+                self.rotAngle = round(val, 1)  # strange behaviour, and rounding seems required
+            else:
+                raise ValueError('rotation angle')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))      
+            
+    @Slot(float)
+    def setGamma(self, val):
+        try:        
+            if 0.0 <= val <= 10.0:
+                self.gamma = val
+            else:
+                raise ValueError('gamma')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+            
+    @Slot(float)
+    def setClaheClipLimit(self, val):
+        try:
+            if val <= 0.0:
+                self.clahe = None
+            elif val <= 10.0:
+                self.clahe = cv2.createCLAHE(clipLimit=val, tileGridSize=(8,8))  # Sets threshold for contrast limiting
+            else:
+                raise ValueError('clahe clip limit')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+            
+    @Slot(int)
+    def setCropXp1(self, val):
+        try:
+            if 0 < val < self.cropRect[3]:        
+                self.cropRect[1] = val
+            else:
+                raise ValueError('crop x1')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+            
+    @Slot(int)
+    def setCropXp2(self, val):
+        try:
+            if self.cropRect[1] < val < self.image.shape[1]:            
+                self.cropRect[3] = val
+            else:
+                raise ValueError('crop x2')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+            
+    @Slot(int)
+    def setCropYp1(self, val):
+        try:
+            if 0 < val < self.cropRect[2]:        
+                self.cropRect[0] = val            
+            else:
+                raise ValueError('crop y1')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+            
+    @Slot(int)
+    def setCropYp2(self, val):
+        try:
+            if self.cropRect[0] < val < self.image.shape[0]:
+                self.cropRect[2] = val            
+            else:
+                raise ValueError('crop y2')
+        except Exception as err:
+            traceback.print_exc()
+            self.signals.error.emit((type(err), err.args, traceback.format_exc()))    
+  

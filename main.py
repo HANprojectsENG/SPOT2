@@ -52,21 +52,21 @@ processor.start(QThread.HighPriority)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
 
 # Connect GUI signals and slots
-window.rotateSpinBox.valueChanged.connect(processor.Enhancer.setRotateAngle)
-window.gammaSpinBox.valueChanged.connect(processor.Enhancer.setGamma)
-window.claheSpinBox.valueChanged.connect(processor.Enhancer.setClaheClipLimit)
+window.rotateSpinBox.valueChanged.connect(processor.enhancer.setRotateAngle)
+window.gammaSpinBox.valueChanged.connect(processor.enhancer.setGamma)
+window.claheSpinBox.valueChanged.connect(processor.enhancer.setClaheClipLimit)
 
 if is_raspberry_pi():
     window.VCSpinBox.valueChanged.connect(vc.setVal)
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
-window.cropXp1Spinbox.valueChanged.connect(processor.Enhancer.setCropXp1)
-window.cropYp1Spinbox.valueChanged.connect(processor.Enhancer.setCropYp1)
-window.cropXp2Spinbox.valueChanged.connect(processor.Enhancer.setCropXp2)
-window.cropYp2Spinbox.valueChanged.connect(processor.Enhancer.setCropYp2)
-window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.setOffset)
-window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
-window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
+window.cropXp1Spinbox.valueChanged.connect(processor.enhancer.setCropXp1)
+window.cropYp1Spinbox.valueChanged.connect(processor.enhancer.setCropYp1)
+window.cropXp2Spinbox.valueChanged.connect(processor.enhancer.setCropXp2)
+window.cropYp2Spinbox.valueChanged.connect(processor.enhancer.setCropYp2)
+##window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.setOffset)
+##window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
+##window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
 """TODO:connect signals to the corresponding objects"""
 
