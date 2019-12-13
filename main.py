@@ -62,7 +62,7 @@ window.cropXp2Spinbox.valueChanged.connect(processor.enhancer.setCropXp2)
 window.cropYp2Spinbox.valueChanged.connect(processor.enhancer.setCropYp2)
 window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.detector.setOffset)
 window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.detector.setBlockSize)
-
+window.gridDetectorButton.stateChanged.connect(processor.setDetector)
 if is_raspberry_pi():
     window.VCSpinBox.valueChanged.connect(vc.setVal)
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
@@ -70,11 +70,14 @@ if is_raspberry_pi():
 """TODO:connect signals to the corresponding objects"""
 
 # Connect GUI slots
-##vs.signals.message.connect(window.print_output)
+vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
-##processor.signals.message.connect(window.print_output)
+processor.signals.message.connect(window.print_output)
 processor.signals.error.connect(window.error_output)
 processor.signals.result.connect(window.update)
+##processor.signals.result.connect(
+##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
+
 
 if is_raspberry_pi():
     af.signals.message.connect(window.print_output)

@@ -67,13 +67,13 @@ class ImageSegmenter(Manipulator):
             list_width = len(row_seg_list)
             list_length = len(col_seg_list)
             self.ROIs = np.zeros([list_width*list_length,4], dtype=np.uint16)
-            ROI_area = 0
+            self.ROI_total_area = 0
             for i, x in enumerate(row_seg_list):
                 for j, y in enumerate(col_seg_list):
                     # ROI: (left,top,width,height)
                     self.ROIs[i+j*list_width] = [x[0],y[0],x[1],y[1]]
                     cv2.rectangle(self.image, (x[0],y[0]), (x[0]+x[1],y[0]+y[1]), (0, 255, 0), 2)
-                    ROI_area += x[1]*y[1]
+                    self.ROI_total_area += x[1]*y[1]
 
             # Compute metrics from grid pattern
             # Rationale: parameterize edge histogram by variance to amplitude (0-bin) ratio 
@@ -84,7 +84,7 @@ class ImageSegmenter(Manipulator):
             self.imageQuality = np.sqrt( np.var(col_stuff) # / col_stuff[np.abs(col_stuff) < .5].size
                                          + np.var(row_stuff) ) # / row_stuff[np.abs(row_stuff) < .5].size )
             # Rationale: sharp edges result in ROI increase
-            self.imageQuality *= (ROI_area/np.prod(self.image.shape[0:2]))             
+            self.imageQuality *= (ROI_total_area/np.prod(self.image.shape[0:2]))             
                 
             # Plot curves
             if self.plot:
@@ -142,7 +142,7 @@ def find1DGrid(data, N):
     gridSmoothKsize = N
     gridMinSegmentLength = 10*N
     
-    # high-pass filter, to suppress uneven illumination
+    # High-pass filter, to suppress uneven illumination
     data = np.abs(data - moving_average(data, int(3*N)))
     data[:N] = 0 # cut off MA artifacts
     data[-N:] = 0 # cut off MA artifacts, why not -(N-1)/2?? ??
@@ -166,28 +166,7 @@ def find1DGrid(data, N):
                 segmentList.append((index - segmentLength, segmentLength))  # Save segment start and length
             segmentLength = 0  # reset counter
         prev_x = x
-####    segmentList = np.array(segmentList)
-####    # Rudimentary grid pattern recognition
-####    # expected pattern: 2 groups of 2 segments (+/- 5%), where the largest is sqrt(2) larger than smallest
-######    print(segmentList)
-####    gridFound = False
-####    if len(segmentList) >= 2 or len(segmentList) <= 10:  # Nr of segments should be reasonable
-####        # try to separate short and long segments, knn wouldbe better
-####        meanSegmentLength = np.mean(segmentList)
-####        shortSegments = segmentList[np.where(segmentList < meanSegmentLength)]
-####        longSegments = segmentList[np.where(segmentList > meanSegmentLength)]
-####        nrOfSegmentsRatio = 0  # define a measure for nr of short vs nr long segments
-####        if len(longSegments) > len(shortSegments):
-####            nrOfSegmentsRatio = len(shortSegments) / len(longSegments)
-####        elif len(shortSegments) > 0:
-####            nrOfSegmentsRatio = len(longSegments) / len(shortSegments)
-####
-####        # nrOfSegmentsRatio = nrOfSegmentsRatio if nrOfSegmentsRatio <= 1.0 else 1 / nrOfSegmentsRatio
-####        if nrOfSegmentsRatio > 0.5:  # nr of short and long segments should be approximaely equal
-####            normSegmentLengthRatio = np.sqrt(2) * np.mean(shortSegments) / np.mean(longSegments)
-####            if normSegmentLengthRatio >= .9 and normSegmentLengthRatio <= 1.1:
-####                gridFound = True
-####
+
     return (segmentList, mask_data, smooth_data)
 
 

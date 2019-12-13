@@ -1,8 +1,10 @@
 """@package docstring
 Detect blobs in the image
 
-TODO: how to pass roi's and imageQuality? via getter or (result) signal?
-No median blurring, but bilateral?
+TODO:
+how to pass roi's and imageQuality? via getter or (result) signal?
+Test and improve local blob snr
+
 """
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
@@ -19,7 +21,8 @@ class BlobDetector(Manipulator):
         detects blobs
 
         \param image (the enhanced and segmented image)
-        \return rects (the detected blobs in rectangles)"""
+        \return image (annotated)
+    """
     
     def __init__(self, *args, **kwargs):
         """The constructor."""
@@ -46,6 +49,7 @@ class BlobDetector(Manipulator):
             plt.show(block=False)
 
         """TODO: Add var rects -> detected blobs/rectangles"""
+        self.blobs = None
         
     def __del__(self):
         """The deconstructor."""
@@ -53,15 +57,25 @@ class BlobDetector(Manipulator):
 
 
     def start(self, Image, ROIs):
-        """Image processing function."""        
+        """Image processing function.
+
+        \param image (the enhanced and segmented image)
+        \return image (the annotated image )
+
+         local variable is the list of detected blobs with the following feature columns:
+         [bb_left,bb_top,bb_width,bb_height, cc_area, sharpness, SNR]
+
+         Sharpness is variation of the Laplacian (introduced by Pech-Pacheco
+         "Diatom autofocusing in brightfield microscopy: a comparative study."
+
+        """        
         try:
             self.startTimer()                
             self.image = Image
             self.ROIs = ROIs
-            self.imageQuality = None
 
             # Iterate ROis
-            for ind, ROI in enumerate(ROIs):
+            for ROI in ROIs:
                 # slice image, assuming ROI:(left,top,width,height)
                 ROI_image = self.image[ROI[1]:ROI[1]+ROI[3],ROI[0]:ROI[0]+ROI[2]]
 
@@ -75,55 +89,44 @@ class BlobDetector(Manipulator):
                 # ConnectedComponentsWithStats output: number of labels, label matrix, stats(left,top,width,height), area
                 blobFeatures = cv2.connectedComponentsWithStats(BWImage, 8, cv2.CV_32S)
                 
-                # Get blob RoI and area, and filter blobFeatures
+                # Get blob RoI and area
                 blobFeatures = blobFeatures[2][1:]  # skipping background (label 0)
                 
                 # Filter by blob area
-                blobFeatures = blobFeatures[
+                self.blobs = blobFeatures[
                     np.where( (blobFeatures[:, cv2.CC_STAT_AREA] > self.minBlobArea) &
                               (blobFeatures[:, cv2.CC_STAT_AREA] < self.maxBlobArea) ) ]
-                
-                
-                for blob in blobFeatures:
+
+                # Increase array size
+                self.blobs = np.concatenate([self.blobs,
+                                             np.zeros((self.blobs.shape[0],2), dtype=int)],
+                                            axis=1)
+
+                # Annotate blobs and compute additional features
+                for blob in self.blobs:
                     tl = (blob[0], blob[1])
                     br = (blob[0] + blob[2], blob[1] + blob[3])
-
-                    # Compute some metrics of individual blobs
-                    cv2.rectangle(ROI_image, tl, br, (0, 0, 0), 1)
-
-                    # Mark blobs in image
-
-# todo dit testen en afmaken
-
-
                     
-##                    self.data = np.copy(tmpData[np.where(tmpData[:, 4] > self.minBlobArea)])
-##                    self.data = self.data[np.where(self.data[:, 4] < self.maxBlobArea)]
-##                # # filter ratio of Area vs ROI, to remove border blobs
-##                # for index, row in enumerate(self.data):
-##                #     if (row[2] * row[3]) / row[4] > 8:
-##                #         print(row)
-##                #         blobData = np.delete(blobData, (index), axis=0)
-##                self.data = np.append(self.data, np.zeros(
-##                    (self.data.shape[0], 3), dtype=int), axis=1)  # add empty columns
+                    # Compute some metrics of individual blobs
+                    tempImage = self.image[tl[1]:br[1], tl[0]:br[0]]
+                    I_0 = 255.0 - np.min(tempImage) # peak foreground intensity estimate
+                    I_b = 255.0 - np.max(tempImage) # background intensity
+
+                    # Add local sharpness column
+                    blob[5] = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())
+
+                    # Add local SNR column
+                    blob[6] = int((I_0-I_b)/np.sqrt(I_b))
+                    
+                    # Mark in image
+                    if self.plot:
+                        cv2.rectangle(ROI_image, tl, br, (0, 0, 0), 1)
+                        cv2.putText(ROI_image, str(blob[5]), br, cv2.FONT_HERSHEY_SIMPLEX, .5, (0,0,0), 1, cv2.LINE_AA)
 
             # Plot last ROI
             if self.plot:
                 cv2.imshow(self.name, BWImage)    
                     
-
-##
-##                # Compute some metrics of individual blobs
-##                for row in self.data:
-##                    tempImage = image[row[1]:row[1] + row[3], row[0]:row[0] + row[2]]
-##                    tempBW = BWImage[row[1]:row[1] + row[3], row[0]:row[0] + row[2]]
-##                    tempMask = tempBW > 0
-##                    im2, contours, hierarchy = cv2.findContours(
-##                        tempBW, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  # assuming that there is one blob in an RoI, if not we need to fiddle with the label output matrix output[1]
-##                    row[5] = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())  # local image quality
-##                    row[6] = len(contours[0])  # perimeter
-##                    row[7] = int(np.mean(tempImage[tempMask]))  # foreground mean intensity
-
             # Finalize
             self.stopTimer()
             self.signals.finished.emit()                

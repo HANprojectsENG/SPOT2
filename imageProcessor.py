@@ -37,7 +37,6 @@ class ImageProcessor(QThread):
         self.enhancer = ImageEnhancer()
         self.segmenter = ImageSegmenter(plot=False)
         self.detector = BlobDetector(plot=True)
-##        self.rects
         
         self.enhancer.signals.finished.connect(self.signals.finished.emit)
         self.enhancer.signals.message.connect(lambda message=str: self.signals.message.emit(message))
@@ -47,7 +46,10 @@ class ImageProcessor(QThread):
         self.segmenter.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
         self.detector.signals.finished.connect(self.signals.finished.emit)
         self.detector.signals.message.connect(lambda message=str: self.signals.message.emit(message))
-        self.detector.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))        
+        self.detector.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
+
+        self.gridDetection = False
+        
         
     def __del__(self):
         None
@@ -82,14 +84,20 @@ class ImageProcessor(QThread):
            
             # Retrieve args/kwargs here; and fire processing using them
             try:
+                # Enhance image
                 self.image = self.enhancer.start(self.image)
-                self.image = self.segmenter.start(self.image)
-                result = self.detector.start(self.image,
-##                                             self.segmenter.ROIs)
-                                             [[int(self.image.shape[1]/4),
-                                               int(self.image.shape[0]/4),
-                                               int(self.image.shape[1]/2),
-                                               int(self.image.shape[0]/2)]])
+                
+                # Segment image according to grid 
+                if self.gridDetection:
+                    self.image = self.segmenter.start(self.image)
+                    ROIs = self.segmenter.ROIs
+                else:
+                    ROIs = [[int(self.image.shape[1]/4), int(self.image.shape[0]/4),
+                             int(self.image.shape[1]/2), int(self.image.shape[0]/2)]]
+
+                # Blob detection
+                result = self.detector.start(self.image, ROIs)
+
             except Exception as err:
                 traceback.print_exc()
                 self.signals.error.emit((type(err), err.args, traceback.format_exc()))
@@ -104,6 +112,10 @@ class ImageProcessor(QThread):
             self.signals.message.emit('I: Stopping worker "{}"\n'.format(self.name))
             self.isStopped = True
             self.quit()
+
+    @Slot(bool)
+    def setDetector(self, val):
+        self.gridDetection = val        
 
     @Slot()
     def showTracked(self):
