@@ -31,8 +31,12 @@ class Manipulator(ABC):
     def startTimer(self):
         """Start millisecond timer."""        
         self.startTime = int(round(time.time() * 1000))
+        self.signals.message.emit('I: {} started'.format(self.name))            
+        
 
     def stopTimer(self):
         """Stop millisecond timer."""        
         self.processsingTime = int(round(time.time() * 1000)) - self.startTime
+        self.signals.message.emit('I: {} finished in {} ms'.format(self.name, self.processsingTime))
+        
          

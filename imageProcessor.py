@@ -10,8 +10,8 @@ import numpy as np
 import cv2
 import traceback
 from imageEnhancer import ImageEnhancer
-from ImgSegmentor import ImgSegmenter
-from BlobDetector import BlobDetector
+from imageSegmenter import ImageSegmenter
+from blobDetector import BlobDetector
 from objectSignals import ObjectSignals
 
 
@@ -35,13 +35,19 @@ class ImageProcessor(QThread):
         self.signals = ObjectSignals()
         self.isStopped = False
         self.enhancer = ImageEnhancer()
-##        self.Segmentor = ImgSegmenter()
-##        self.Detector = BlobDetector()
+        self.segmenter = ImageSegmenter(plot=False)
+        self.detector = BlobDetector(plot=True)
 ##        self.rects
         
         self.enhancer.signals.finished.connect(self.signals.finished.emit)
         self.enhancer.signals.message.connect(lambda message=str: self.signals.message.emit(message))
         self.enhancer.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
+        self.segmenter.signals.finished.connect(self.signals.finished.emit)
+        self.segmenter.signals.message.connect(lambda message=str: self.signals.message.emit(message))
+        self.segmenter.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
+        self.detector.signals.finished.connect(self.signals.finished.emit)
+        self.detector.signals.message.connect(lambda message=str: self.signals.message.emit(message))
+        self.detector.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))        
         
     def __del__(self):
         None
@@ -51,16 +57,16 @@ class ImageProcessor(QThread):
     # Note that we need this wrapper around the Thread run function, since the latter will not accept any parameters
     def update(self, image=None):
         try:
-
-            # set cropping rectangle
-            ##            self.enhancer.setCropRect((0,0,image.shape[0],image.shape[1]))
-
-            if self.isRunning():  # thread is already running
+            
+            if self.isRunning():
+                # thread is already running
                 # drop frame
                 self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
-            elif image is not None:  # we have a new image
-                self.image = image #.copy()
+            elif image is not None:
+                # we have a new image
+                self.image = image #.copy()        
                 self.start()
+                
         except Exception as err:
             traceback.print_exc()
             self.signals.error.emit((type(err), err.args, traceback.format_exc()))
@@ -71,16 +77,19 @@ class ImageProcessor(QThread):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
-        if not self.isStopped:
-
+        if not self.isStopped and self.image is not None:
             self.signals.message.emit('I: Running worker "{}"\n'.format(self.name))
            
             # Retrieve args/kwargs here; and fire processing using them
             try:
-               result = self.enhancer.start(self.image)
-##       imgEnhanced = self.Enhancer.start(self.image)
-##        imgSegmented = self.Segmentor.start(imgEnhanced)
-##        imgProcessed = self.Detector.start(imgSegmented)               
+                self.image = self.enhancer.start(self.image)
+                self.image = self.segmenter.start(self.image)
+                result = self.detector.start(self.image,
+##                                             self.segmenter.ROIs)
+                                             [[int(self.image.shape[1]/4),
+                                               int(self.image.shape[0]/4),
+                                               int(self.image.shape[1]/2),
+                                               int(self.image.shape[0]/2)]])
             except Exception as err:
                 traceback.print_exc()
                 self.signals.error.emit((type(err), err.args, traceback.format_exc()))

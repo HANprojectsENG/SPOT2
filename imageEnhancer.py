@@ -2,6 +2,7 @@
 Documentation for this module.
 
 TODO:
+For the first image of the stream 'self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)' results in a runtime warning, why?
 Auto-rotate, based on info obtained further down the DIP chain
 Auto-crop, e.g. fixed, or based on rotate and on info obtained further down the DIP chain (cut uncharp edges)
  
@@ -47,7 +48,6 @@ class ImageEnhancer(Manipulator):
         """Image processing function."""        
         try:
             self.startTimer()                
-            self.signals.message.emit('I: {} started'.format(self.name))            
             self.image = Image
 
             if self.cropRect[2] == 0:
@@ -80,14 +80,14 @@ class ImageEnhancer(Manipulator):
             
             # Contrast Limited Adaptive Histogram Equalization.
             if self.clahe is not None:  
-                self.image = self.clahe.apply(image)
+                self.image = self.clahe.apply(self.image)
                 
             # Change gamma correction
             if 1.0 < self.gamma < 10.0:  
                 self.image = adjust_gamma(self.image, self.gamma)
 
+            # Finalize
             self.stopTimer()
-            self.signals.message.emit('I: {} finished in {} ms'.format(self.name, self.processsingTime))
             self.signals.finished.emit()
 
                 
@@ -98,90 +98,60 @@ class ImageEnhancer(Manipulator):
 
         return self.image
 
-    def adjust_gamma(image, gamma=1.0):
-       invGamma = 1.0 / gamma
-       table = np.array([((i / 255.0) ** invGamma) * 255
-    ##   table = np.array([(  np.log(1.0 + i/255.0)*gamma) * 255  # log transform
-          for i in np.arange(0, 256)]).astype("uint8")
-       return cv2.LUT(image, table)
-       
-
     @Slot(float)
     def setRotateAngle(self, val):
-        try:
-            if -5.0 <= val <= 5.0:
-                self.rotAngle = round(val, 1)  # strange behaviour, and rounding seems required
-            else:
-                raise ValueError('rotation angle')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))      
+        if -5.0 <= val <= 5.0:
+            self.rotAngle = round(val, 1)  # strange behaviour, and rounding seems required
+        else:
+            raise ValueError('rotation angle')
             
     @Slot(float)
     def setGamma(self, val):
-        try:        
-            if 0.0 <= val <= 10.0:
-                self.gamma = val
-            else:
-                raise ValueError('gamma')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        if 0.0 <= val <= 10.0:
+            self.gamma = val
+        else:
+            raise ValueError('gamma')
             
     @Slot(float)
     def setClaheClipLimit(self, val):
-        try:
-            if val <= 0.0:
-                self.clahe = None
-            elif val <= 10.0:
-                self.clahe = cv2.createCLAHE(clipLimit=val, tileGridSize=(8,8))  # Sets threshold for contrast limiting
-            else:
-                raise ValueError('clahe clip limit')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        if val <= 0.0:
+            self.clahe = None
+        elif val <= 10.0:
+            self.clahe = cv2.createCLAHE(clipLimit=val, tileGridSize=(8,8))  # Sets threshold for contrast limiting
+        else:
+            raise ValueError('clahe clip limit')
             
     @Slot(int)
     def setCropXp1(self, val):
-        try:
-            if 0 < val < self.cropRect[3]:        
-                self.cropRect[1] = val
-            else:
-                raise ValueError('crop x1')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        if 0 <= val <= self.cropRect[3]:        
+            self.cropRect[1] = val
+        else:
+            raise ValueError('crop x1')
             
     @Slot(int)
     def setCropXp2(self, val):
-        try:
-            if self.cropRect[1] < val < self.image.shape[1]:            
-                self.cropRect[3] = val
-            else:
-                raise ValueError('crop x2')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        if self.cropRect[1] < val < self.image.shape[1]:            
+            self.cropRect[3] = val
+        else:
+            raise ValueError('crop x2')
             
     @Slot(int)
     def setCropYp1(self, val):
-        try:
-            if 0 < val < self.cropRect[2]:        
-                self.cropRect[0] = val            
-            else:
-                raise ValueError('crop y1')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+        if 0 <= val <= self.cropRect[2]:        
+            self.cropRect[0] = val            
+        else:
+            raise ValueError('crop y1')
             
     @Slot(int)
     def setCropYp2(self, val):
-        try:
-            if self.cropRect[0] < val < self.image.shape[0]:
-                self.cropRect[2] = val            
-            else:
-                raise ValueError('crop y2')
-        except Exception as err:
-            traceback.print_exc()
-            self.signals.error.emit((type(err), err.args, traceback.format_exc()))    
+        if self.cropRect[0] < val < self.image.shape[0]:
+            self.cropRect[2] = val            
+        else:
+            raise ValueError('crop y2')
   
+def adjust_gamma(image, gamma=1.0):
+   invGamma = 1.0 / gamma
+   table = np.array([((i / 255.0) ** invGamma) * 255
+##   table = np.array([(  np.log(1.0 + i/255.0)*gamma) * 255  # log transform
+      for i in np.arange(0, 256)]).astype("uint8")
+   return cv2.LUT(image, table)

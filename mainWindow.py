@@ -212,7 +212,7 @@ class MainWindow(QWidget):
         elif (event.angleDelta().y() < 0) and (self.imageScalingFactor < 1.0):  # zooming out
             self.imageScalingFactor += self.imageScalingStep        
         self.imageScalingFactor = round(self.imageScalingFactor, 2)  # strange behaviour, so rounding is necessary
-        self.imgUpdate()  # redraw the image with different scaling
+        self.update()  # redraw the image with different scaling
 
     def closeEvent(self, event: QCloseEvent):
         self.saveSettings()

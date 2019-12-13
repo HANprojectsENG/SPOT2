@@ -37,6 +37,7 @@ if is_raspberry_pi():
     framerate=FRAME_RATE, effect='blur', use_video_port=USE_VIDEO_PORT)
     pio = pigpio.pi()
     vc = VoiceCoil(pio)
+    af = None
     heater = Heater(pio, 2000)
 else:
     filename, _ = QFileDialog.getOpenFileName(caption='Open file', dir='.'
@@ -51,41 +52,59 @@ processor.start(QThread.HighPriority)
 # Connect video/image stream to processing (Qt.BlockingQueuedConnection or QueuedConnection?)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
 
-# Connect GUI signals and slots
+# Connect GUI signals
 window.rotateSpinBox.valueChanged.connect(processor.enhancer.setRotateAngle)
 window.gammaSpinBox.valueChanged.connect(processor.enhancer.setGamma)
 window.claheSpinBox.valueChanged.connect(processor.enhancer.setClaheClipLimit)
+window.cropXp1Spinbox.valueChanged.connect(processor.enhancer.setCropXp1)
+window.cropYp1Spinbox.valueChanged.connect(processor.enhancer.setCropYp1)
+window.cropXp2Spinbox.valueChanged.connect(processor.enhancer.setCropXp2)
+window.cropYp2Spinbox.valueChanged.connect(processor.enhancer.setCropYp2)
+window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.detector.setOffset)
+window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.detector.setBlockSize)
 
 if is_raspberry_pi():
     window.VCSpinBox.valueChanged.connect(vc.setVal)
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
-window.cropXp1Spinbox.valueChanged.connect(processor.enhancer.setCropXp1)
-window.cropYp1Spinbox.valueChanged.connect(processor.enhancer.setCropYp1)
-window.cropXp2Spinbox.valueChanged.connect(processor.enhancer.setCropXp2)
-window.cropYp2Spinbox.valueChanged.connect(processor.enhancer.setCropYp2)
-##window.adaptiveThresholdOffsetSpinbox.valueChanged.connect(processor.Detector.setOffset)
-##window.adaptiveThresholdBlocksizeSpinBox.valueChanged.connect(processor.Detector.setBlockSize)
-##window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
-
 """TODO:connect signals to the corresponding objects"""
 
-#vs.ready.connect(lambda: processor.imgUpdate(vs.frame), type.Qt.BlockingQueue)
-#processor.ready.connect(lambda: tracker.update(processor.Detector.rects)
-# , type=QueuedConnection)
-
-vs.signals.message.connect(window.print_output)
-vs.signals.progress.connect(window.progress_fn)
+# Connect GUI slots
+##vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
-##processor.signals.finished.connect(window.thread_complete)
-processor.signals.message.connect(window.print_output)
-processor.signals.result.connect(window.update)
+##processor.signals.message.connect(window.print_output)
 processor.signals.error.connect(window.error_output)
+processor.signals.result.connect(window.update)
 
+if is_raspberry_pi():
+    af.signals.message.connect(window.print_output)
+    af.signals.error.connect(window.error_output)
+    vc.signals.message.connect(window.print_output)
+    vc.signals.error.connect(window.error_output)
+    heater.signals.message.connect(window.print_output)
+    heater.signals.error.connect(window.error_output)
+    
+# Initialize objects from GUI
+processor.enhancer.setRotateAngle(window.rotateSpinBox.value())
+processor.enhancer.setGamma(window.gammaSpinBox.value())
+processor.enhancer.setClaheClipLimit(window.claheSpinBox.value())
+processor.enhancer.setCropXp1(window.cropXp1Spinbox.value())
+processor.enhancer.setCropYp1(window.cropYp1Spinbox.value())
+##processor.enhancer.setCropXp2(window.cropXp2Spinbox.value())
+##processor.enhancer.setCropYp2(window.cropYp2Spinbox.value())
+processor.detector.setOffset(window.adaptiveThresholdOffsetSpinbox.value())
+processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value())
+
+# Recipes invoked when mainWindow is closed, note that scheduler stops other threads
 window.signals.finished.connect(processor.stop)
 window.signals.finished.connect(vs.stop)
-
+if is_raspberry_pi():
+    window.signals.finished.connect(vc.stop)
+    window.signals.finished.connect(autoFocus.stop)
+    
+# Start the show
 window.show()
-
 app.exec_()
 
+    
+    
