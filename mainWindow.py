@@ -11,6 +11,13 @@ import numpy as np
 import cv2
 from checkOS import is_raspberry_pi
 from objectSignals import ObjectSignals
+import matplotlib
+# Make sure that we are using QT5
+matplotlib.use('Qt5Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 class MainWindow(QWidget):
     '''
@@ -37,23 +44,31 @@ class MainWindow(QWidget):
 
     def initUI(self):
         self.setWindowTitle(self.appName)
-        self.move(300,100)
         screen = QDesktopWidget().availableGeometry()
         self.imageWidth = round(screen.height() * 0.8)
         self.imageHeight = round(screen.width() * 0.8)
         self.imageScalingFactor = 1.0
         self.imageScalingStep = 0.1
+        
         # Labels
         self.PixImage = QLabel()
         self.timerLabel = QLabel()
         self.imageQualityLabel = QLabel()
         self.temperatureLabel = QLabel()
+        
+        # a figure instance to plot on
+        self.canvas = FigureCanvas(Figure()) #(figsize=(5, 3)))
+        self.axes = self.canvas.figure.subplots(2, 2, sharex=True, sharey=True)
+
+        # this is the Navigation widget
+        # it takes the Canvas widget and a parent
+##        self.toolbar = NavigationToolbar(self.canvas, self)
+        
         # Buttons
         self.snapshotButton = QPushButton("Snapshot")
         self.snapshotButton.clicked.connect(self.snapshot)
         self.autoFocusButton = QPushButton("AutoFocus")
         self.gridDetectorButton = QCheckBox("GridDetector")
-        self.gridDetectorButton.setChecked(True)
         # Spinboxes
         self.VCSpinBox = QDoubleSpinBox(self)
         self.VCSpinBoxTitle = QLabel("VC")
@@ -149,13 +164,14 @@ class MainWindow(QWidget):
         widgetLayout.addWidget(self.timerLabel,index+4,1,alignment=Qt.AlignLeft)
         widgetLayout.addWidget(QLabel("Temperature [°C]: "),index+5,0,alignment=Qt.AlignLeft)
         widgetLayout.addWidget(self.temperatureLabel,index+5,1,alignment=Qt.AlignLeft)
+
+        # Compose final layout
         layout = QHBoxLayout()
         layout.addLayout(widgetLayout, Qt.AlignTop|Qt.AlignCenter)
         layout.addWidget(self.PixImage, Qt.AlignTop|Qt.AlignCenter)
-##        layout.setSpacing(100)
+        layout.addWidget(self.canvas, Qt.AlignTop|Qt.AlignCenter)
         self.setLayout(layout)
-##        self.showMaximized()
-    
+
     def progress_fn(self, n):
         print("%d%% done" % n)
 
@@ -191,6 +207,26 @@ class MainWindow(QWidget):
             qImage = QImage(image.data, width, height, width * 3, QImage.Format_RGB888)  # Convert from OpenCV to PixMap
             self.PixImage.setPixmap(QPixmap(qImage))
             self.PixImage.show()
+
+    @Slot(int, np.ndarray, np.ndarray)
+    def updatePlot(self, quadrant, x, y):
+        if not (y is None):
+            # select axes
+            if quadrant == 1:
+                axes = self.axes[0, 1]
+            elif quadrant == 2:
+                axes = self.axes[0, 0]
+            elif quadrant == 3:
+                axes = self.axes[1, 0]
+            elif quadrant == 4:
+                axes = self.axes[1, 1]
+            # plot new data
+            axes.clear()
+            if x is None:
+                axes.plot(y)
+            else:
+                axes.plot(x, y)
+            axes.figure.canvas.draw()            
 
     @Slot()
     def kickTimer(self):

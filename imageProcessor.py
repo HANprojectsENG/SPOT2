@@ -36,20 +36,9 @@ class ImageProcessor(QThread):
         self.isStopped = False
         self.enhancer = ImageEnhancer()
         self.segmenter = ImageSegmenter(plot=False)
-        self.detector = BlobDetector(plot=True)
-        
-        self.enhancer.signals.finished.connect(self.signals.finished.emit)
-        self.enhancer.signals.message.connect(lambda message=str: self.signals.message.emit(message))
-        self.enhancer.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
-        self.segmenter.signals.finished.connect(self.signals.finished.emit)
-        self.segmenter.signals.message.connect(lambda message=str: self.signals.message.emit(message))
-        self.segmenter.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
-        self.detector.signals.finished.connect(self.signals.finished.emit)
-        self.detector.signals.message.connect(lambda message=str: self.signals.message.emit(message))
-        self.detector.signals.error.connect(lambda err=tuple: self.signals.error.emit(err))
-
+        self.detector = BlobDetector(plot=False)
         self.gridDetection = False
-        
+       
         
     def __del__(self):
         None

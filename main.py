@@ -11,6 +11,8 @@ from mainWindow import MainWindow
 from checkOS import is_raspberry_pi
 from imageProcessor import ImageProcessor
 from centroidtracker import CentroidTracker
+from statsComputer import StatsComputer
+
 # system dependent imports
 if is_raspberry_pi():
     from pyqtpicam import PiVideoStream
@@ -29,6 +31,7 @@ main application
 app = QApplication([])
 window = MainWindow()
 processor = ImageProcessor()
+statsComputer = StatsComputer()
 tracker = CentroidTracker()
 
 # Instantiate objects
@@ -51,6 +54,7 @@ processor.start(QThread.HighPriority)
 
 # Connect video/image stream to processing (Qt.BlockingQueuedConnection or QueuedConnection?)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
+processor.signals.result.connect(statsComputer.start)
 
 # Connect GUI signals
 window.rotateSpinBox.valueChanged.connect(processor.enhancer.setRotateAngle)
@@ -72,12 +76,21 @@ if is_raspberry_pi():
 # Connect GUI slots
 vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
-processor.signals.message.connect(window.print_output)
-processor.signals.error.connect(window.error_output)
 processor.signals.result.connect(window.update)
+statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
+
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
-
+processor.signals.message.connect(window.print_output)
+processor.enhancer.signals.message.connect(window.print_output)
+processor.segmenter.signals.message.connect(window.print_output)
+processor.detector.signals.message.connect(window.print_output)
+statsComputer.signals.message.connect(window.print_output)
+processor.signals.error.connect(window.error_output)
+processor.enhancer.signals.error.connect(window.error_output)
+processor.segmenter.signals.error.connect(window.error_output)
+processor.detector.signals.error.connect(window.error_output)
+statsComputer.signals.error.connect(window.error_output)
 
 if is_raspberry_pi():
     af.signals.message.connect(window.print_output)
@@ -106,8 +119,7 @@ if is_raspberry_pi():
     window.signals.finished.connect(autoFocus.stop)
     
 # Start the show
+window.move(100,100)
+window.resize(1500, 500)
 window.show()
 app.exec_()
-
-    
-    

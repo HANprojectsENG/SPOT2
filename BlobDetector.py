@@ -48,7 +48,6 @@ class BlobDetector(Manipulator):
             cv2.namedWindow(self.name)
             plt.show(block=False)
 
-        """TODO: Add var rects -> detected blobs/rectangles"""
         self.blobs = None
         
     def __del__(self):
