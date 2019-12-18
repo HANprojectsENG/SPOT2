@@ -117,7 +117,11 @@ class BlobDetector(Manipulator):
                     blob[5] = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())
 
                     # Add local SNR column
-                    blob[6] = int((I_0-I_b)/np.sqrt(I_b))
+                    blob[6] = int((I_0-I_b)/np.sqrt(I_b)) if I_b>0 else 0
+
+                    # Shift coordinates wrt ROI
+                    blob[0] += ROI[0]
+                    blob[1] += ROI[1]
                     
                     # Mark in image
                     if self.plot:

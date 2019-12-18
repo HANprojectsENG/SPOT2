@@ -38,8 +38,8 @@ class ImageProcessor(QThread):
         self.signals = ObjectSignals()
         self.isStopped = False
         self.enhancer = ImageEnhancer()
-        self.segmenter = ImageSegmenter(plot=False)
-        self.detector = BlobDetector(plot=False)
+        self.segmenter = ImageSegmenter(plot=True)
+        self.detector = BlobDetector(plot=True)
         self.gridDetection = False
        
         
