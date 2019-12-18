@@ -1,23 +1,40 @@
 # import the necessary packages
 from scipy.spatial import distance as dist
+from objectSignals import ObjectSignals
 from collections import OrderedDict
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
 import numpy as np
+import time
+import cv2
 
-class CentroidTracker():
-	def __init__(self, maxDisappeared=50):
+class CentroidTracker(QThread):
+	def __init__(self, *args, **kwargs):
+		super().__init__()
 		# initialize the next unique object ID along with two ordered
 		# dictionaries used to keep track of mapping a given object
 		# ID to its centroid and number of consecutive frames it has
 		# been marked as "disappeared", respectively
+		self.signals = ObjectSignals()
 		self.nextObjectID = 0
 		self.objects = OrderedDict()
 		self.disappeared = OrderedDict()
 		self.euclideanDis = []
+		self.rects = []
+		self.image = None
+		self.startTime = 0
 
 		# store the number of maximum consecutive frames a given
 		# object is allowed to be marked as "disappeared" until we
 		# need to deregister the object from tracking
-		self.maxDisappeared = maxDisappeared
+		self.maxDisappeared = 50
+
+		self.imageShow = True
+
+	def imageShowOff(self):
+		if self.imageShow:
+			self.imageShow = False
 
 	def register(self, centroid):
 		# when registering an object we use the next available object
@@ -37,11 +54,45 @@ class CentroidTracker():
 	def getEuclideans(self):
 		return self.euclideanDis
 
-	def update(self, rects):
+	def showTrackedObjects(self):
+		for (objectID, centroid) in self.objects.items():
+		# draw both the ID of the object and the centroid of the
+		# object on the output frame
+			text = "ID {}".format(objectID)
+		#cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
+		#	cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+			cv2.circle(self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+		self.signals.result.emit(self.image)  # Return the result of the processing
+		
+	@Slot(np.ndarray)
+    # Note that we need this wrapper around the Thread run function, 
+	# since the latter will not accept any parameters
+	def update(self, image=None, rects=None):
+		try:
+			if self.isRunning():
+                # thread is already running
+                # drop frame
+				self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
+			elif rects is not None:
+                # we have a new image
+				self.image = image #.copy() 
+				self.rects = rects       
+				self.start()
+                
+		except Exception as err:
+			traceback.print_exc()
+			self.signals.error.emit((type(err), err.args, traceback.format_exc()))
+
+
+	@Slot()
+	def run(self):
+		self.startTimer()
+		self.signals.message.emit('I: Running worker "{}"\n'.format(__name__))
 		# check to see if the list of input bounding box rectangles
 		# is empty
 		distances = []
-		if len(rects) == 0:
+		if len(self.rects) == 0:
 			# loop over any existing tracked objects and mark them
 			# as disappeared
 			for objectID in list(self.disappeared.keys()):
@@ -58,13 +109,14 @@ class CentroidTracker():
 			return self.objects
 
 		# initialize an array of input centroids for the current frame
-		inputCentroids = np.zeros((len(rects), 2), dtype="int")
+		inputCentroids = np.zeros((len(self.rects), 2), dtype="int")
 
 		# loop over the bounding box rectangles
-		for (i, (startX, startY, endX, endY)) in enumerate(rects):
+		for (i, rect) in enumerate(self.rects):
+			(startX, startY, endX, endY) = rect[:4]
 			# use the bounding box coordinates to derive the centroid
-			cX = int((startX + endX) / 2.0)
-			cY = int((startY + endY) / 2.0)
+			cX = int((startX + (startX + endX) ) / 2.0) # x1+x2 /2
+			cY = int((startY + (startY + endY)) / 2.0) # y1+y2 /2
 			inputCentroids[i] = (cX, cY)
 
 		# if we are currently not tracking any objects take the input
@@ -162,6 +214,26 @@ class CentroidTracker():
 			else:
 				for col in unusedCols:
 					self.register(inputCentroids[col])
-
+		
+		self.stopTimer()
+		self.signals.finished.emit()
 		# return the set of trackable objects
 		return self.objects
+
+	@Slot()
+	def stop(self):
+		if self.isRunning():
+			self.signals.message.emit('I: Stopping worker "{}"\n'.format(__name__))
+			self.isStopped = True
+			self.quit()
+	
+	def startTimer(self):
+		"""Start millisecond timer."""        
+		self.startTime = int(round(time.time() * 1000))
+		self.signals.message.emit('I: {} started'.format(__name__))            
+        
+	def stopTimer(self):
+		"""Stop millisecond timer."""
+
+		self.processsingTime = int(round(time.time() * 1000)) - self.startTime
+		self.signals.message.emit('I: {} finished in {} ms'.format(__name__, self.processsingTime))

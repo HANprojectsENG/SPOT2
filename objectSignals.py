@@ -25,3 +25,4 @@ class ObjectSignals(QObject):
     message = Signal(str)
     result = Signal(np.ndarray)
     progress = Signal(int)
+    resultBlobs = Signal(np.ndarray, list)

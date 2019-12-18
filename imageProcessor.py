@@ -6,13 +6,16 @@ images are passed via wrapper
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from PySide2.QtCore import *
+from PySide2.QtGui import *
+from PySide2.QtWidgets import *
 import numpy as np
 import cv2
 import traceback
 from imageEnhancer import ImageEnhancer
 from imageSegmenter import ImageSegmenter
-from blobDetector import BlobDetector
+from BlobDetector import BlobDetector
 from objectSignals import ObjectSignals
+from PySide2.QtCore import QThread
 
 
 class ImageProcessor(QThread):
@@ -102,6 +105,7 @@ class ImageProcessor(QThread):
                 traceback.print_exc()
                 self.signals.error.emit((type(err), err.args, traceback.format_exc()))
             else:
+                self.signals.resultBlobs.emit(result,self.detector.blobs)
                 self.signals.result.emit(result)  # Return the result of the processing
             finally:
                 self.signals.finished.emit()  # Done
@@ -117,10 +121,6 @@ class ImageProcessor(QThread):
     def setDetector(self, val):
         self.gridDetection = val        
 
-    @Slot()
-    def showTracked(self):
-        None
-        #show tracked objects
 
             
 

@@ -48,6 +48,7 @@ else:
 # Start video stream
 vs.start(QThread.HighPriority)
 processor.start(QThread.HighPriority)
+tracker.start(QThread.HighPriority)
 
 # Connect video/image stream to processing (Qt.BlockingQueuedConnection or QueuedConnection?)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
@@ -74,7 +75,11 @@ vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
 processor.signals.message.connect(window.print_output)
 processor.signals.error.connect(window.error_output)
-processor.signals.result.connect(window.update)
+tracker.signals.message.connect(window.print_output)
+tracker.signals.result.connect(window.update)
+
+processor.signals.resultBlobs.connect(tracker.update)
+tracker.signals.finished.connect(tracker.showTrackedObjects)
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
 
@@ -97,6 +102,8 @@ processor.enhancer.setCropYp1(window.cropYp1Spinbox.value())
 ##processor.enhancer.setCropYp2(window.cropYp2Spinbox.value())
 processor.detector.setOffset(window.adaptiveThresholdOffsetSpinbox.value())
 processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value())
+
+#processor.signals.result.connect(tracker.update())
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads
 window.signals.finished.connect(processor.stop)
