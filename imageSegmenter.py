@@ -34,7 +34,10 @@ class ImageSegmenter(Manipulator):
         # Plotting
         self.plot = kwargs['plot'] if 'plot' in kwargs else False
 
-        if self.plot:
+        # Debug plot
+        self.debugPlot = kwargs['debugPlot'] if 'debugPlot' in kwargs else False
+
+        if self.debugPlot:
             self.fig, (self.ax1, self.ax2) = plt.subplots(2,1)
             self.graph1 = None
             self.graph2 = None
@@ -87,7 +90,7 @@ class ImageSegmenter(Manipulator):
             self.imageQuality *= (self.ROI_total_area/np.prod(self.image.shape[0:2]))             
                 
             # Plot curves
-            if self.plot:
+            if self.debugPlot:
                 col_hist, bin_edges = np.histogram(col_stuff, bins=np.arange(-5,5,.1), density=True)
                 
                 # Draw grid lines
