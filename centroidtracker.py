@@ -10,7 +10,7 @@ import time
 import cv2
 
 class CentroidTracker(QThread):
-	def __init__(self, *args, **kwargs):
+	def __init__(self):
 		super().__init__()
 		# initialize the next unique object ID along with two ordered
 		# dictionaries used to keep track of mapping a given object
@@ -29,12 +29,6 @@ class CentroidTracker(QThread):
 		# object is allowed to be marked as "disappeared" until we
 		# need to deregister the object from tracking
 		self.maxDisappeared = 50
-
-		self.imageShow = True
-
-	def imageShowOff(self):
-		if self.imageShow:
-			self.imageShow = False
 
 	def register(self, centroid):
 		# when registering an object we use the next available object
@@ -75,8 +69,9 @@ class CentroidTracker(QThread):
                 # drop frame
 				self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
 			elif rects is not None:
-                # we have a new image
-				self.image = image #.copy() 
+				if image is not None:
+                	# we have a new image
+					self.image = image #.copy() 
 				self.rects = rects       
 				self.start()
                 

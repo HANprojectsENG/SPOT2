@@ -72,31 +72,24 @@ if is_raspberry_pi():
     window.VCSpinBox.valueChanged.connect(vc.setVal)
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
-"""TODO:connect signals to the corresponding objects"""
-
-# Connect GUI slots
+# Connect GUI slots to window
 vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
-
 processor.signals.message.connect(window.print_output)
 processor.signals.error.connect(window.error_output)
 tracker.signals.message.connect(window.print_output)
 tracker.signals.result.connect(window.update)
 #processor.signals.result.connect(window.update)
 
-processor.signals.resultBlobs.connect(tracker.update)
-tracker.signals.finished.connect(tracker.showTrackedObjects)
-
-
-statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
-
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
+#connect messages to window
 processor.signals.message.connect(window.print_output)
 processor.enhancer.signals.message.connect(window.print_output)
 processor.segmenter.signals.message.connect(window.print_output)
 processor.detector.signals.message.connect(window.print_output)
 statsComputer.signals.message.connect(window.print_output)
+#connect errors to window
 processor.signals.error.connect(window.error_output)
 processor.enhancer.signals.error.connect(window.error_output)
 processor.segmenter.signals.error.connect(window.error_output)
@@ -122,7 +115,10 @@ processor.enhancer.setCropYp1(window.cropYp1Spinbox.value())
 processor.detector.setOffset(window.adaptiveThresholdOffsetSpinbox.value())
 processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value())
 
-#processor.signals.result.connect(tracker.update())
+#Connect object signals
+processor.signals.resultBlobs.connect(tracker.update)
+tracker.signals.finished.connect(tracker.showTrackedObjects)
+statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads
 window.signals.finished.connect(processor.stop)
