@@ -50,6 +50,7 @@ class BlobDetector(Manipulator):
 
         """TODO: Add var rects -> detected blobs/rectangles"""
         self.blobs = list
+
         
     def __del__(self):
         """The deconstructor."""

@@ -84,7 +84,7 @@ class ImageSegmenter(Manipulator):
             self.imageQuality = np.sqrt( np.var(col_stuff) # / col_stuff[np.abs(col_stuff) < .5].size
                                          + np.var(row_stuff) ) # / row_stuff[np.abs(row_stuff) < .5].size )
             # Rationale: sharp edges result in ROI increase
-            self.imageQuality *= (ROI_total_area/np.prod(self.image.shape[0:2]))             
+            self.imageQuality *= (self.ROI_total_area/np.prod(self.image.shape[0:2]))             
                 
             # Plot curves
             if self.plot:
