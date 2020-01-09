@@ -17,7 +17,6 @@ class StatsComputer(QObject):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.name = "compute statistics"
         self.stats = None
         self.signals = ObjectSignals()
 
@@ -43,5 +42,5 @@ class StatsComputer(QObject):
         except Exception as err:
             exc = traceback.format_exception(type(err), err, err.__traceback__, chain=False)
             self.signals.error.emit(exc)
-            self.signals.message.emit('E: {} exception: {}'.format(self.name, err))
+            self.signals.message.emit('E: {} exception: {}'.format(__name__, err))
             

@@ -62,9 +62,9 @@ class CentroidTracker(QThread):
 
             text = "ID {}".format(objectID)
             cv2.putText(
-                self.image, text, (centroid[0]-10, centroid[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                self.image, text, (centroid[0]-10, centroid[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 255, 0), 1)
             cv2.circle(
-                self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), 1)
 
             self.signals.result.emit(self.image)
 
@@ -77,7 +77,7 @@ class CentroidTracker(QThread):
                 # thread is already running
                 # drop frame
                 self.signals.message.emit(
-                    'I: {} busy, frame dropped'.format(self.name))
+                    'I: {} busy, frame dropped'.format(__name__))
             elif rects is not None:
                 # we have a new image
                 self.image = image  # .copy()
@@ -217,6 +217,7 @@ class CentroidTracker(QThread):
             else:
                 for col in unusedCols:
                     self.register(inputCentroids[col])
+        print(len(self.objects))
 
         self.stopTimer()
         self.signals.finished.emit()

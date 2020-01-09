@@ -9,10 +9,9 @@ class Manipulator(ABC):
     More details.
     """      
 
-    def __init__(self, Name):
+    def __init__(self):
         """The constructor."""        
         super(Manipulator,self).__init__()
-        self.name = Name
         self.image = None
         self.show = False # Show intermediate results
         self.processsingTime = 0 # processing time [ms]
@@ -31,12 +30,12 @@ class Manipulator(ABC):
     def startTimer(self):
         """Start millisecond timer."""        
         self.startTime = int(round(time.time() * 1000))
-        self.signals.message.emit('I: {} started'.format(self.name))            
+        self.signals.message.emit('I: {} started'.format(__name__))            
         
 
     def stopTimer(self):
         """Stop millisecond timer."""        
         self.processsingTime = int(round(time.time() * 1000)) - self.startTime
-        self.signals.message.emit('I: {} finished in {} ms'.format(self.name, self.processsingTime))
+        self.signals.message.emit('I: {} finished in {} ms'.format(__name__, self.processsingTime))
         
          

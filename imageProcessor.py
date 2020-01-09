@@ -33,7 +33,6 @@ class ImageProcessor(QThread):
     def __init__(self):
         super().__init__()
 
-        self.name = 'image processor'
         self.image = None
         self.signals = ObjectSignals()
         self.isStopped = False
@@ -55,7 +54,7 @@ class ImageProcessor(QThread):
             if self.isRunning():
                 # thread is already running
                 # drop frame
-                self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
+                self.signals.message.emit('I: {} busy, frame dropped'.format(__name__))
             elif image is not None:
                 # we have a new image
                 self.image = image #.copy()        
@@ -72,7 +71,7 @@ class ImageProcessor(QThread):
         Initialise the runner function with passed args, kwargs.
         '''
         if not self.isStopped and self.image is not None:
-            self.signals.message.emit('I: Running worker "{}"\n'.format(self.name))
+            self.signals.message.emit('I: Running worker "{}"\n'.format(__name__))
            
             # Retrieve args/kwargs here; and fire processing using them
             try:
@@ -102,7 +101,7 @@ class ImageProcessor(QThread):
     @Slot()
     def stop(self):
         if self.isRunning():
-            self.signals.message.emit('I: Stopping worker "{}"\n'.format(self.name))
+            self.signals.message.emit('I: Stopping worker "{}"\n'.format(__name__))
             self.isStopped = True
             self.quit()
 

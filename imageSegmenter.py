@@ -22,7 +22,7 @@ class ImageSegmenter(Manipulator):
     
     def __init__(self, *args, **kwargs):
         """The constructor."""
-        super().__init__("image segmenter")
+        super().__init__()
 
         # ksize - Median Blur aperture linear size;
         #  must be odd and greater than 1, for example: 3, 5, 7 ...
@@ -123,7 +123,7 @@ class ImageSegmenter(Manipulator):
         except Exception as err:
             exc = traceback.format_exception(type(err), err, err.__traceback__, chain=False)
             self.signals.error.emit(exc)
-            self.signals.message.emit('E: {} exception: {}'.format(self.name, err))
+            self.signals.message.emit('E: {} exception: {}'.format(__name__, err))
 
         return self.image
 

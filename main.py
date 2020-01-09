@@ -56,6 +56,7 @@ tracker.start(QThread.HighPriority)
 # Connect video/image stream to processing (Qt.BlockingQueuedConnection or QueuedConnection?)
 vs.signals.result.connect(processor.update, type=Qt.BlockingQueuedConnection)
 processor.signals.result.connect(statsComputer.start)
+processor.signals.resultBlobs.connect(tracker.update)
 
 # Connect GUI signals
 window.rotateSpinBox.valueChanged.connect(processor.enhancer.setRotateAngle)
@@ -80,13 +81,9 @@ processor.signals.error.connect(window.error_output)
 tracker.signals.message.connect(window.print_output)
 tracker.signals.result.connect(window.update)
 #processor.signals.result.connect(window.update)
-
-processor.signals.resultBlobs.connect(tracker.update)
-tracker.signals.finished.connect(tracker.showTrackedObjects)
-
-
 statsComputer.signals.finished.connect(lambda: window.updatePlot(1, None, statsComputer.area_histogram))
 statsComputer.signals.finished.connect(lambda: window.updatePlot(2, None, statsComputer.peri_to_area_histogram))
+tracker.signals.finished.connect(tracker.showTrackedObjects)
 
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
@@ -121,11 +118,6 @@ processor.enhancer.setCropYp1(window.cropYp1Spinbox.value())
 ##processor.enhancer.setCropYp2(window.cropYp2Spinbox.value())
 processor.detector.setOffset(window.adaptiveThresholdOffsetSpinbox.value())
 processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value())
-
-#Connect object signals
-processor.signals.resultBlobs.connect(tracker.update)
-tracker.signals.finished.connect(tracker.showTrackedObjects)
-statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads
 window.signals.finished.connect(processor.stop)
