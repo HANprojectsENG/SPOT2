@@ -16,7 +16,7 @@ from statsComputer import StatsComputer
 # system dependent imports
 if is_raspberry_pi():
     from pyqtpicam import PiVideoStream
-    from autoFocis import AutoFocus
+    from autoFocus import AutoFocus
     from voiceCoil import VoiceCoil
     from heater import Heater
 else:
@@ -72,8 +72,6 @@ if is_raspberry_pi():
     window.VCSpinBox.valueChanged.connect(vc.setVal)
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
-"""TODO:connect signals to the corresponding objects"""
-
 # Connect GUI slots
 vs.signals.message.connect(window.print_output)
 vs.signals.error.connect(window.error_output)
@@ -88,7 +86,8 @@ processor.signals.resultBlobs.connect(tracker.update)
 tracker.signals.finished.connect(tracker.showTrackedObjects)
 
 
-statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
+statsComputer.signals.finished.connect(lambda: window.updatePlot(1, None, statsComputer.area_histogram))
+statsComputer.signals.finished.connect(lambda: window.updatePlot(2, None, statsComputer.peri_to_area_histogram))
 
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))

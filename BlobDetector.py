@@ -88,10 +88,10 @@ class BlobDetector(Manipulator):
                                                 self.offset)
 
                 # ConnectedComponentsWithStats output: number of labels, label matrix, stats(left,top,width,height), area
-                blobFeatures = cv2.connectedComponentsWithStats(BWImage, 8, cv2.CV_32S)
+                _,_,blobFeatures,_ = cv2.connectedComponentsWithStats(BWImage, 8, cv2.CV_32S)
                 
                 # Get blob RoI and area
-                blobFeatures = blobFeatures[2][1:]  # skipping background (label 0)
+                blobFeatures = blobFeatures[1:]  # skipping background (label 0)
                 
                 # Filter by blob area
                 self.blobs = blobFeatures[
@@ -100,7 +100,7 @@ class BlobDetector(Manipulator):
 
                 # Increase array size
                 self.blobs = np.concatenate([self.blobs,
-                                             np.zeros((self.blobs.shape[0],2), dtype=int)],
+                                             np.zeros((self.blobs.shape[0],3), dtype=int)],
                                             axis=1)
 
                 # Annotate blobs and compute additional features
@@ -113,11 +113,17 @@ class BlobDetector(Manipulator):
                     I_0 = 255.0 - np.min(tempImage) # peak foreground intensity estimate
                     I_b = 255.0 - np.max(tempImage) # background intensity
 
-                    # Add local sharpness column
+                    # Local sharpness column
                     blob[5] = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())
 
-                    # Add local SNR column
+                    # Local SNR column
                     blob[6] = int((I_0-I_b)/np.sqrt(I_b)) if I_b>0 else 0
+
+                    # Perimeter
+                    tempBWImage = BWImage[tl[1]:br[1], tl[0]:br[0]]
+                    contours, _ = cv2.findContours(tempBWImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+                    contour = max(contours, key=cv2.contourArea) # select largest contour
+                    blob[7] = len(contour)
 
                     # Shift coordinates wrt ROI
                     blob[0] += ROI[0]
