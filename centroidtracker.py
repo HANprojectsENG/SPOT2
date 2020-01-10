@@ -82,7 +82,7 @@ class CentroidTracker(QThread):
                 # we have a new image
                 self.image = image  # .copy()
                 self.rects = rects
-                self.start()
+                self.start(QThread.HighPriority)
 
         except Exception as err:
             traceback.print_exc()
@@ -217,7 +217,6 @@ class CentroidTracker(QThread):
             else:
                 for col in unusedCols:
                     self.register(inputCentroids[col])
-        print(len(self.objects))
 
         self.stopTimer()
         self.signals.finished.emit()

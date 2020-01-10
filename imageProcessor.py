@@ -10,12 +10,14 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 import numpy as np
 import cv2
+import time
 import traceback
 from imageEnhancer import ImageEnhancer
 from imageSegmenter import ImageSegmenter
 from BlobDetector import BlobDetector
 from objectSignals import ObjectSignals
 from PySide2.QtCore import QThread
+import time
 
 
 class ImageProcessor(QThread):
@@ -58,14 +60,14 @@ class ImageProcessor(QThread):
             elif image is not None:
                 # we have a new image
                 self.image = image #.copy()        
-                self.start()
+                self.start(QThread.HighPriority)
                 
         except Exception as err:
             traceback.print_exc()
             self.signals.error.emit((type(err), err.args, traceback.format_exc()))
 
        
-    @Slot()
+    # @Slot()
     def run(self):
         '''
         Initialise the runner function with passed args, kwargs.
@@ -75,6 +77,8 @@ class ImageProcessor(QThread):
            
             # Retrieve args/kwargs here; and fire processing using them
             try:
+                self.startTimer()                
+
                 # Enhance image
                 self.image = self.enhancer.start(self.image)
                 
@@ -96,6 +100,7 @@ class ImageProcessor(QThread):
                 self.signals.resultBlobs.emit(result,self.detector.blobs)
                 self.signals.result.emit(result)  # Return the result of the processing
             finally:
+                self.stopTimer()
                 self.signals.finished.emit()  # Done
                 
     @Slot()
@@ -108,6 +113,18 @@ class ImageProcessor(QThread):
     @Slot(bool)
     def setDetector(self, val):
         self.gridDetection = val        
+
+
+    def startTimer(self):
+        """Start millisecond timer."""        
+        self.startTime = int(round(time.time() * 1000))
+        self.signals.message.emit('I: {} started'.format(__name__))            
+        
+
+    def stopTimer(self):
+        """Stop millisecond timer."""        
+        self.processsingTime = int(round(time.time() * 1000)) - self.startTime
+        self.signals.message.emit('I: {} finished in {} ms'.format(__name__, self.processsingTime))        
 
 
             

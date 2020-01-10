@@ -18,6 +18,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import time
 
 class MainWindow(QWidget):
     '''
@@ -253,6 +254,7 @@ class MainWindow(QWidget):
     def closeEvent(self, event: QCloseEvent):
         self.saveSettings()
         self.signals.finished.emit()
+        time.sleep(1)
         event.accept()        
 
     def snapshot(self):

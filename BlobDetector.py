@@ -64,7 +64,7 @@ class BlobDetector(Manipulator):
         \return image (the annotated image )
 
          local variable is the list of detected blobs with the following feature columns:
-         [bb_left,bb_top,bb_width,bb_height, cc_area, sharpness, SNR]
+         [bb_left,bb_top,bb_width,bb_height, cc_area, sharpness, SNR, perimeter]
 
          Sharpness is variation of the Laplacian (introduced by Pech-Pacheco
          "Diatom autofocusing in brightfield microscopy: a comparative study."
