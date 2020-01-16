@@ -1,5 +1,6 @@
 from PySide2.QtCore import *
 import numpy as np
+from enum import Enum
 
 class ObjectSignals(QObject):
     '''
@@ -26,3 +27,8 @@ class ObjectSignals(QObject):
     result = Signal(np.ndarray)
     progress = Signal(int)
     resultBlobs = Signal(np.ndarray, list)
+
+class FigureTypes(Enum):
+    LINEAR = 1
+    SCATTER = 2
+    HISTOGRAM = 3

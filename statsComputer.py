@@ -1,12 +1,11 @@
 """@package docstring
 Documentation for this module.
-
 """
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import numpy as np
 from PySide2.QtCore import *
-import cv2
+import cv2 as cv
 import inspect
 import traceback
 from objectSignals import ObjectSignals
@@ -35,12 +34,11 @@ class StatsComputer(QObject):
             self.blobs = blobs
 
             # Compute statistics from blob ensemble parameters
-            y,x = np.histogram(self.blobs[:,4], bins=100, range=(self.minBlobArea,self.maxBlobArea))
-
-            self.stats = y
+            self.area_histogram, x = np.histogram(self.blobs[:,cv.CC_STAT_AREA], bins=100, range=(self.minBlobArea,self.maxBlobArea))
+            self.peri_to_area_histogram, x = np.histogram(np.divide(self.blobs[:,cv.CC_STAT_AREA],self.blobs[:,7]), bins=100)
                     
             # Finalize
-            self.signals.result.emit(self.stats)  # Return the result of the processing
+            self.signals.finished.emit()  # Return processing
 
         except Exception as err:
             exc = traceback.format_exception(type(err), err, err.__traceback__, chain=False)

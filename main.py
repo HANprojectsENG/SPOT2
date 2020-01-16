@@ -16,7 +16,7 @@ from statsComputer import StatsComputer
 # system dependent imports
 if is_raspberry_pi():
     from pyqtpicam import PiVideoStream
-    from autoFocis import AutoFocus
+    from autoFocus import AutoFocus
     from voiceCoil import VoiceCoil
     from heater import Heater
 else:
@@ -81,6 +81,13 @@ tracker.signals.message.connect(window.print_output)
 tracker.signals.result.connect(window.update)
 #processor.signals.result.connect(window.update)
 
+processor.signals.resultBlobs.connect(tracker.update)
+tracker.signals.finished.connect(tracker.showTrackedObjects)
+
+
+statsComputer.signals.finished.connect(lambda: window.updatePlot(1, None, statsComputer.area_histogram))
+statsComputer.signals.finished.connect(lambda: window.updatePlot(2, None, statsComputer.peri_to_area_histogram))
+
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
 #connect messages to window
@@ -118,7 +125,8 @@ processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value()
 #Connect object signals
 processor.signals.resultBlobs.connect(tracker.update)
 tracker.signals.finished.connect(tracker.showTrackedObjects)
-tracker.signals.result.connect(lambda y: window.updatePlot(2,None,y))
+tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.SCATTER, euclideans))
+tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.HISTOGRAM, euclideans))
 statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads
