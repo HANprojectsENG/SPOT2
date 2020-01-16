@@ -53,7 +53,12 @@ class CentroidTracker(QThread):
         #del self.euclideanD[objectID]
 
     def getEuclideans(self):
-        return self.euclideanDis
+        euclideans = []
+        frames = 0
+        for i in distances:
+            euclideans.extend(i)
+            # frames += 1
+        return euclideans
 
     def showTrackedObjects(self):
         for (objectID, centroid) in self.objects.items():
@@ -219,6 +224,7 @@ class CentroidTracker(QThread):
                     self.register(inputCentroids[col])
 
         self.stopTimer()
+        self.signals.result.emit(self.getEuclideans())
         self.signals.finished.emit()
         # return the set of trackable objects
         return self.objects

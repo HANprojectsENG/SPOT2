@@ -125,6 +125,8 @@ processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value()
 #Connect object signals
 processor.signals.resultBlobs.connect(tracker.update)
 tracker.signals.finished.connect(tracker.showTrackedObjects)
+tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.SCATTER, euclideans))
+tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.HISTOGRAM, euclideans))
 statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads

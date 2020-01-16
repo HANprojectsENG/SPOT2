@@ -209,7 +209,7 @@ class MainWindow(QWidget):
             self.PixImage.show()
 
     @Slot(int, np.ndarray, np.ndarray)
-    def updatePlot(self, quadrant, x, y):
+    def updatePlot(self, quadrant, figType=LINEAR, x, y):
         if not (y is None):
             # select axes
             if quadrant == 1:
@@ -222,10 +222,23 @@ class MainWindow(QWidget):
                 axes = self.axes[1, 1]
             # plot new data
             axes.clear()
-            if x is None:
-                axes.plot(y)
-            else:
-                axes.plot(x, y)
+            if figType == LINEAR: 
+                if x is None:
+                    axes.plot(y)
+                else:
+                    axes.plot(x, y)
+            elif figType == SCATTER:
+                #scatter plot
+                t = np.arange(0,len(x),1)
+                axes.scatter(t, x, c="blue", alpha=0.5)
+                axes.set_xlabel('frame')
+                axes.set_ylabel('Distance')
+            elif figType == HISTOGRAM:
+                #hist
+                if x != None:
+                    axes.hist(x, 30, density=True, facecolor="blue", alpha=0.5)
+                    axes.set_xlabel('Distance')
+                    axes.set_ylabel('Occurance')
             axes.figure.canvas.draw()            
 
     @Slot()
