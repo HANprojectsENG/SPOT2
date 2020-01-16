@@ -46,7 +46,20 @@ class CentroidTracker(QThread):
 		#del self.euclideanD[objectID]
 
 	def getEuclideans(self):
-		return self.euclideanDis
+		euclideans = []
+		frames = 0
+		for i in self.euclideanDis:
+			euclideans.extend(i)
+			frames += 1
+		#t = np.arange(0, len(euclideans), 1)
+
+		return euclideans, frames
+
+	def showHist(self):
+		euclideans, frames = self.getEuclideans()
+		y, x = np.histogram(euclideans, bins=30, density=True)
+
+		return y
 
 	def showTrackedObjects(self):
 		for (objectID, centroid) in self.objects.items():
@@ -212,6 +225,9 @@ class CentroidTracker(QThread):
 		
 		self.stopTimer()
 		self.signals.finished.emit()
+		#if show_graph:
+
+		self.signals.result.emit(self.showHist())
 		# return the set of trackable objects
 		return self.objects
 
