@@ -12,6 +12,7 @@ from checkOS import is_raspberry_pi
 from imageProcessor import ImageProcessor
 from centroidtracker import CentroidTracker
 from statsComputer import StatsComputer
+from objectSignals import FigureTypes
 
 # system dependent imports
 if is_raspberry_pi():
@@ -73,42 +74,41 @@ if is_raspberry_pi():
     window.TemperatureSPinBox.valueChanged.connect(heater.setVal)
 
 # Connect GUI slots to window
-vs.signals.message.connect(window.print_output)
-vs.signals.error.connect(window.error_output)
-processor.signals.message.connect(window.print_output)
-processor.signals.error.connect(window.error_output)
-tracker.signals.message.connect(window.print_output)
-tracker.signals.result.connect(window.update)
+
+#processor.signals.message.connect(window.print_output)
+#processor.signals.error.connect(window.error_output)
 #processor.signals.result.connect(window.update)
-
-processor.signals.resultBlobs.connect(tracker.update)
-tracker.signals.finished.connect(tracker.showTrackedObjects)
-
-
-statsComputer.signals.finished.connect(lambda: window.updatePlot(1, None, statsComputer.area_histogram))
-statsComputer.signals.finished.connect(lambda: window.updatePlot(2, None, statsComputer.peri_to_area_histogram))
-
 ##processor.signals.result.connect(
 ##    lambda x = str(processor.detector.blobs[0]) if not processor.detector.blobs is None else 0: window.print_output(x))
+
 #connect messages to window
 processor.signals.message.connect(window.print_output)
 processor.enhancer.signals.message.connect(window.print_output)
 processor.segmenter.signals.message.connect(window.print_output)
 processor.detector.signals.message.connect(window.print_output)
 statsComputer.signals.message.connect(window.print_output)
+vs.signals.message.connect(window.print_output)
+tracker.signals.message.connect(window.print_output)
+
 #connect errors to window
 processor.signals.error.connect(window.error_output)
 processor.enhancer.signals.error.connect(window.error_output)
 processor.segmenter.signals.error.connect(window.error_output)
 processor.detector.signals.error.connect(window.error_output)
 statsComputer.signals.error.connect(window.error_output)
+vs.signals.error.connect(window.error_output)
+
+#connect results en finnished signals
+
 
 if is_raspberry_pi():
+    #messages
     af.signals.message.connect(window.print_output)
-    af.signals.error.connect(window.error_output)
     vc.signals.message.connect(window.print_output)
-    vc.signals.error.connect(window.error_output)
     heater.signals.message.connect(window.print_output)
+    #error signals
+    af.signals.error.connect(window.error_output)
+    vc.signals.error.connect(window.error_output)
     heater.signals.error.connect(window.error_output)
     
 # Initialize objects from GUI
@@ -117,17 +117,23 @@ processor.enhancer.setGamma(window.gammaSpinBox.value())
 processor.enhancer.setClaheClipLimit(window.claheSpinBox.value())
 processor.enhancer.setCropXp1(window.cropXp1Spinbox.value())
 processor.enhancer.setCropYp1(window.cropYp1Spinbox.value())
-##processor.enhancer.setCropXp2(window.cropXp2Spinbox.value())
-##processor.enhancer.setCropYp2(window.cropYp2Spinbox.value())
 processor.detector.setOffset(window.adaptiveThresholdOffsetSpinbox.value())
 processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value())
 
-#Connect object signals
+#Connect results and finished signals
+tracker.signals.result.connect(window.update)
 processor.signals.resultBlobs.connect(tracker.update)
+processor.signals.resultBlobs.connect(tracker.update)
+tracker.signals.resultDist.connect(lambda euclideans: window.updatePlot(FigureTypes.SCATTER, 3, euclideans, None))
+tracker.signals.resultDist.connect(lambda euclideans: window.updatePlot(FigureTypes.HISTOGRAM, 4, euclideans, None))
+
 tracker.signals.finished.connect(tracker.showTrackedObjects)
-tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.SCATTER, euclideans))
-tracker.signals.result.connect(lambda euclideans: windows.updatePlot(2,FigureTypes.HISTOGRAM, euclideans))
-statsComputer.signals.result.connect(lambda y: window.updatePlot(1, None, y))
+tracker.signals.finished.connect(tracker.showTrackedObjects)
+
+#statsComputer.signals.result.connect(lambda y: window.updatePlot(FigureTypes.LINEAR, 1, None, y))
+statsComputer.signals.finished.connect(lambda: window.updatePlot(FigureTypes.LINEAR, 1, None, statsComputer.area_histogram))
+statsComputer.signals.finished.connect(lambda: window.updatePlot(FigureTypes.LINEAR, 2, None, statsComputer.peri_to_area_histogram))
+
 
 # Recipes invoked when mainWindow is closed, note that scheduler stops other threads
 window.signals.finished.connect(processor.stop)
