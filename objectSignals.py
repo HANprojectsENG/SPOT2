@@ -27,6 +27,7 @@ class ObjectSignals(QObject):
     result = Signal(np.ndarray)
     progress = Signal(int)
     resultBlobs = Signal(np.ndarray, list)
+    resultDist = Signal(np.ndarray)
 
 class FigureTypes(Enum):
     LINEAR = 1

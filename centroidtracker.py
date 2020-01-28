@@ -1,6 +1,6 @@
 # import the necessary packages
 from scipy.spatial import distance as dist
-from objectSignals import ObjectSignals
+from objectSignals import *
 from collections import OrderedDict
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -8,6 +8,7 @@ from PySide2.QtWidgets import *
 import numpy as np
 import time
 import cv2
+import traceback
 
 
 class CentroidTracker(QThread):
@@ -43,22 +44,20 @@ class CentroidTracker(QThread):
         self.objects[self.nextObjectID] = centroid
         self.disappeared[self.nextObjectID] = 0
         self.nextObjectID += 1
-        #self.euclideanD[self.nextObjectID] = -1
 
     def deregister(self, objectID):
         # to deregister an object ID we delete the object ID from
         # both of our respective dictionaries
         del self.objects[objectID]
         del self.disappeared[objectID]
-        #del self.euclideanD[objectID]
 
-    def getEuclideans(self):
+    def EuclideansReady(self):
         euclideans = []
-        frames = 0
-        for i in distances:
+        # frames = 0
+        for i in self.euclideanDis:
             euclideans.extend(i)
             # frames += 1
-        return euclideans
+        self.signals.resultDist.emit(euclideans)
 
     def showTrackedObjects(self):
         for (objectID, centroid) in self.objects.items():
@@ -68,10 +67,9 @@ class CentroidTracker(QThread):
             text = "ID {}".format(objectID)
             cv2.putText(
                 self.image, text, (centroid[0]-10, centroid[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(
-                self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            cv2.circle(self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-            self.signals.result.emit(self.image)
+        self.signals.result.emit(self.image)
 
     @Slot(np.ndarray)
     # Note that we need this wrapper around the Thread run function,
@@ -82,7 +80,7 @@ class CentroidTracker(QThread):
                 # thread is already running
                 # drop frame
                 self.signals.message.emit(
-                    'I: {} busy, frame dropped'.format(self.name))
+                    'I: {} busy, frame dropped'.format(__name__))
             elif rects is not None:
                 # we have a new image
                 self.image = image  # .copy()
@@ -166,7 +164,6 @@ class CentroidTracker(QThread):
             usedRows = set()
             usedCols = set()
 
-            #del self.euclideanD
 
             # loop over the combination of the (row, column) index
             # tuples
@@ -223,9 +220,13 @@ class CentroidTracker(QThread):
                 for col in unusedCols:
                     self.register(inputCentroids[col])
 
+        self.EuclideansReady()
+        self.showTrackedObjects()
         self.stopTimer()
-        self.signals.result.emit(self.getEuclideans())
+        # self.signals.result.emit(self.getEuclideans())
+        #self.signals.result.emit(self.objects)
         self.signals.finished.emit()
+
         # return the set of trackable objects
         return self.objects
 
