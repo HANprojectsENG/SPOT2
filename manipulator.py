@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
+from PySide2.QtCore import *
+from objectSignals import ObjectSignals
 import time
 
 class Manipulator(ABC):
@@ -8,20 +9,19 @@ class Manipulator(ABC):
     More details.
     """      
 
-    def __init__(Name, Image):
+    def __init__(self, Name):
         """The constructor."""        
         super(Manipulator,self).__init__()
         self.name = Name
+        self.image = None
         self.show = False # Show intermediate results
-        self.image = Image
         self.processsingTime = 0 # processing time [ms]
         self.startTime = 0
-        self.message = pyqtSignal(str) # Message signal
-        self.ready = pyqtSignal()
+        self.signals = ObjectSignals()    
     
-    @pyqtSlot()
-    def show(self):
-        pyqtShow()    
+##    @Slot()
+##    def show(self):
+##        pyqtShow()    
 
     @abstractmethod
     def start(self):
@@ -30,9 +30,11 @@ class Manipulator(ABC):
 
     def startTimer(self):
         """Start millisecond timer."""        
-         self.startTime = int(round(time.time() * 1000))
+        self.startTime = int(round(time.time() * 1000))
+        self.signals.message.emit('I: {} started'.format(self.name))            
+        
 
     def stopTimer(self):
         """Stop millisecond timer."""        
-         self.processsingTime = int(round(time.time() * 1000)) - self.startTime
-         
+        self.processsingTime = int(round(time.time() * 1000)) - self.startTime
+        self.signals.message.emit('I: {} finished in {} ms'.format(self.name, self.processsingTime))

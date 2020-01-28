@@ -1,0 +1,93 @@
+@@startuml
+
+title "Proposition for architecture"
+
+abstract Manipulator{
+    name
+    image
+    procMillis = 0 
+    --
+    ready = pyqtSignal()
+    message = pyqtSignal(str)  # Message signal
+    ready = pyqtSignal()
+    __init__()
+}
+
+class ImgEnhancer{
+    image
+    --
+    ImgUpdate()
+    run()
+    setRotateAngle(angle)
+    setGamma(val)
+    setClaheClipLimit(val)
+    setCrop(point,val)
+}
+
+class ImgSegmenter{
+    image
+    ROIs
+    --
+    start(image)
+}
+
+class Detector{
+    Image
+    rects
+    --
+    getRects()
+}
+
+class Image{
+    image
+    RoI
+    rectsList
+    ImgEnhancer
+    ImgSegmentor
+    Detector
+    --
+    start()
+    getBlobs()
+}
+
+class CentroidTracker{
+    nextObjectID
+	objects 
+	disappeared
+	euclideanDis
+    --
+    register(centroid)
+    deregister(objectID)
+    getEuclideans()
+    update(rects)
+}
+
+class MainWindow{
+    name
+    closing
+    message
+    image
+    --
+    __init__()
+    initUI()
+    imgUpdate()
+    kickTimer()
+    temperatureUpdate(temp)
+    wheelEvent(event)
+    closeEvent(event)
+    snapshot()
+    loadSettings()
+    saveSettings()
+}
+
+
+ImgEnhancer -up-|> Manipulator
+ImgSegmenter -up-|> Manipulator
+Detector -up-|> Manipulator
+
+ImgSegmenter --* Image
+ImgEnhancer --* Image
+Detector --* Image
+Image <.. CentroidTracker
+Image --o MainWindow
+@@enduml
