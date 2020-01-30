@@ -231,21 +231,21 @@ class MainWindow(QWidget):
             elif figType == FigureTypes.SCATTER:
                 if not(x is None):
                     #scatter plot
-                    t = np.arange(0, 100, 1)
-                    length = len(x) - 100
+                    if len(x) >= 100:
+                        t = np.arange(0, 100, 1)
+                        length = len(x) - 100
 
-                    axes.scatter(t, x[length:len(x)], c="blue", alpha=0.5)
-                    axes.set_xlabel('frame')
-                    axes.set_ylabel('Distance')
+                        axes.scatter(t, x[length:len(x)], c="blue", alpha=0.5)
+                        # axes.set_xlabel('frame')
+                        # axes.set_ylabel('Distance')
 
             elif figType == FigureTypes.HISTOGRAM:
                 #hist
                 if not(x is None):
-                    # y_hist, n = np.histogram(y, bins=100, range=(0,500))
-                    # axes.plot(y_hist)
-                    axes.hist(x, 30, density=True, facecolor="blue", alpha=0.5)
+                    if len(x) > 0:
+                        axes.hist(x, 30, density=True, facecolor="blue", alpha=0.5)
                     #axes.set_xlabel('Distance')
-                    # aes.set_ylabel('Occurance')
+                    #axes.set_ylabel('Occurance')
             axes.figure.canvas.draw()            
 
     @Slot()

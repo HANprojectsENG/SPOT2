@@ -15,6 +15,7 @@ import inspect
 import traceback
 from manipulator import Manipulator
 import matplotlib.pyplot as plt
+from Blob import Blob
 
 class BlobDetector(Manipulator):
     """Object detector
@@ -50,6 +51,7 @@ class BlobDetector(Manipulator):
 
         """TODO: Add var rects -> detected blobs/rectangles"""
         self.blobs = list
+        
 
         
     def __del__(self):
@@ -74,6 +76,7 @@ class BlobDetector(Manipulator):
             self.startTimer()                
             self.image = Image
             self.ROIs = ROIs
+            self._Blobs = list()
 
             # Iterate ROis
             for ROI in ROIs:
@@ -104,7 +107,9 @@ class BlobDetector(Manipulator):
                                             axis=1)
 
                 # Annotate blobs and compute additional features
+
                 for blob in self.blobs:
+
                     tl = (blob[0], blob[1])
                     br = (blob[0] + blob[2], blob[1] + blob[3])
                     
@@ -113,26 +118,36 @@ class BlobDetector(Manipulator):
                     I_0 = 255.0 - np.min(tempImage) # peak foreground intensity estimate
                     I_b = 255.0 - np.max(tempImage) # background intensity
 
+                    # Shift coordinates wrt ROI
+                    blob[0] += ROI[0]
+                    blob[1] += ROI[1]
+
+                    #centroid
+                    cX = int((blob[0] + blob[0] +blob[2]) / 2.0)    # x1+x2 /2
+                    cY = int((blob[1] - blob[3] + blob[1]) / 2.0)   # y1+y2 /2
+
+                    DetectedBlob = Blob(blob[0], blob[0] + blob[2],
+                        blob[1] - blob[3], blob[1], (cX,cY))
+
                     # Local sharpness column
-                    blob[5] = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())
+                    DetectedBlob._local_sharpness = int(cv2.Laplacian(tempImage, cv2.CV_64F).var())
 
                     # Local SNR column
-                    blob[6] = int((I_0-I_b)/np.sqrt(I_b)) if I_b>0 else 0
+                    DetectedBlob._local_SNR = int((I_0-I_b)/np.sqrt(I_b)) if I_b>0 else 0
 
                     # Perimeter
                     tempBWImage = BWImage[tl[1]:br[1], tl[0]:br[0]]
                     contours, _ = cv2.findContours(tempBWImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
                     contour = max(contours, key=cv2.contourArea) # select largest contour
-                    blob[7] = len(contour)
+                    DetectedBlob._perimeter = len(contour)
 
-                    # Shift coordinates wrt ROI
-                    blob[0] += ROI[0]
-                    blob[1] += ROI[1]
+                    #Add blob to list
+                    self._Blobs.append(DetectedBlob)
                     
                     # Mark in image
-                    if self.plot:
-                        cv2.rectangle(ROI_image, tl, br, (0, 0, 0), 1)
-                        cv2.putText(ROI_image, str(blob[5]), br, cv2.FONT_HERSHEY_SIMPLEX, .5, (0,0,0), 1, cv2.LINE_AA)
+                    # if self.plot:
+                        # cv2.rectangle(ROI_image, tl, br, (0, 0, 0), 1)
+                        #cv2.putText(ROI_image, str(blob[5]), br, cv2.FONT_HERSHEY_SIMPLEX, .5, (0,0,0), 1, cv2.LINE_AA)
 
             # Plot last ROI
             if self.plot:
