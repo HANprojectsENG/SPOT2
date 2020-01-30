@@ -49,9 +49,7 @@ class BlobDetector(Manipulator):
             cv2.namedWindow(self.name)
             plt.show(block=False)
 
-        """TODO: Add var rects -> detected blobs/rectangles"""
-        self.blobs = list
-        
+        """TODO: Add var rects -> detected blobs/rectangles"""       
 
         
     def __del__(self):
@@ -97,18 +95,18 @@ class BlobDetector(Manipulator):
                 blobFeatures = blobFeatures[1:]  # skipping background (label 0)
                 
                 # Filter by blob area
-                self.blobs = blobFeatures[
+                blobFeatures = blobFeatures[
                     np.where( (blobFeatures[:, cv2.CC_STAT_AREA] > self.minBlobArea) &
                               (blobFeatures[:, cv2.CC_STAT_AREA] < self.maxBlobArea) ) ]
 
                 # Increase array size
-                self.blobs = np.concatenate([self.blobs,
-                                             np.zeros((self.blobs.shape[0],3), dtype=int)],
+                blobFeatures = np.concatenate([blobFeatures,
+                                             np.zeros((blobFeatures.shape[0],3), dtype=int)],
                                             axis=1)
 
                 # Annotate blobs and compute additional features
 
-                for blob in self.blobs:
+                for blob in blobFeatures:
 
                     tl = (blob[0], blob[1])
                     br = (blob[0] + blob[2], blob[1] + blob[3])
