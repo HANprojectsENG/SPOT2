@@ -16,6 +16,7 @@ from imageSegmenter import ImageSegmenter
 from BlobDetector import BlobDetector
 from objectSignals import ObjectSignals
 from PySide2.QtCore import QThread
+from Blob import Blob
 
 
 class ImageProcessor(QThread):
@@ -94,7 +95,7 @@ class ImageProcessor(QThread):
                 traceback.print_exc()
                 self.signals.error.emit((type(err), err.args, traceback.format_exc()))
             else:
-                self.signals.resultBlobs.emit(result,self.detector.blobs)
+                self.signals.resultBlobs.emit(result,self.detector._Blobs)
                 self.signals.result.emit(result)  # Return the result of the processing
             finally:
                 self.signals.finished.emit()  # Done

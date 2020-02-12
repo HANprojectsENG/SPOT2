@@ -122,12 +122,12 @@ processor.detector.setBlockSize(window.adaptiveThresholdBlocksizeSpinBox.value()
 
 #Connect results and finished signals
 tracker.signals.result.connect(window.update)
-processor.signals.resultBlobs.connect(tracker.update)
+# processor.signals.resultBlobs.connect(tracker.update)
 processor.signals.resultBlobs.connect(tracker.update)
 tracker.signals.resultDist.connect(lambda euclideans: window.updatePlot(FigureTypes.SCATTER, 3, euclideans, None))
 tracker.signals.resultDist.connect(lambda euclideans: window.updatePlot(FigureTypes.HISTOGRAM, 4, euclideans, None))
 
-tracker.signals.finished.connect(tracker.showTrackedObjects)
+# tracker.signals.finished.connect(tracker.showTrackedObjects)
 tracker.signals.finished.connect(tracker.showTrackedObjects)
 
 #statsComputer.signals.result.connect(lambda y: window.updatePlot(FigureTypes.LINEAR, 1, None, y))

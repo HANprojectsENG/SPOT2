@@ -21,11 +21,12 @@ class CentroidTracker(QThread):
         self.signals = ObjectSignals()
         self.nextObjectID = 0
         self.objects = OrderedDict()
-        self.disappeared = OrderedDict()
+        self.disappeared = list()
         self.euclideanDis = []
-        self.rects = []
+        #self.rects = []
         self.image = None
         self.startTime = 0
+        self.Blobs = list()
 
         # store the number of maximum consecutive frames a given
         # object is allowed to be marked as "disappeared" until we
@@ -38,53 +39,52 @@ class CentroidTracker(QThread):
         if self.imageShow:
             self.imageShow = False
 
-    def register(self, centroid):
+    def register(self, Blob):
         # when registering an object we use the next available object
         # ID to store the centroid
-        self.objects[self.nextObjectID] = centroid
-        self.disappeared[self.nextObjectID] = 0
+        self.objects[self.nextObjectID] = Blob
+        self.objects[self.nextObjectID]._disappeared = 0
         self.nextObjectID += 1
 
     def deregister(self, objectID):
         # to deregister an object ID we delete the object ID from
         # both of our respective dictionaries
         del self.objects[objectID]
-        del self.disappeared[objectID]
+        if objectID in self.disappeared:
+            self.disappeared.remove(objectID)
 
     def EuclideansReady(self):
         euclideans = []
-        # frames = 0
         for i in self.euclideanDis:
             euclideans.extend(i)
-            # frames += 1
         self.signals.resultDist.emit(euclideans)
 
     def showTrackedObjects(self):
-        for (objectID, centroid) in self.objects.items():
+        for (objectID, Blob) in self.objects.items():
             # draw both the ID of the object and the centroid of the
             # object on the output frame
-
             text = "ID {}".format(objectID)
             cv2.putText(
-                self.image, text, (centroid[0]-10, centroid[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(self.image, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                self.image, text, (Blob._centroid[0]-10, Blob._centroid[1]-10),
+                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.circle(self.image, (Blob._centroid[0], Blob._centroid[1]), 4, (0, 255, 0), -1)
 
         self.signals.result.emit(self.image)
 
     @Slot(np.ndarray)
     # Note that we need this wrapper around the Thread run function,
     # since the latter will not accept any parameters
-    def update(self, image=None, rects=None):
+    def update(self, image=None, Blobs=None):
         try:
             if self.isRunning():
                 # thread is already running
                 # drop frame
                 self.signals.message.emit(
                     'I: {} busy, frame dropped'.format(__name__))
-            elif rects is not None:
+            elif Blobs is not None:
                 # we have a new image
                 self.image = image  # .copy()
-                self.rects = rects
+                self.Blobs = Blobs
                 self.start()
 
         except Exception as err:
@@ -96,19 +96,21 @@ class CentroidTracker(QThread):
     def run(self):
         self.startTimer()
         self.signals.message.emit('I: Running worker "{}"\n'.format(__name__))
-        # check to see if the list of input bounding box rectangles
-        # is empty
+
         distances = []
-        if len(self.rects) == 0:
+
+        # check to see if the list of Blobs is empty
+        if len(self.Blobs) == 0:
+
             # loop over any existing tracked objects and mark them
             # as disappeared
-            for objectID in list(self.disappeared.keys()):
-                self.disappeared[objectID] += 1
+            for objectID in self.disappeared:
+                self.objects[objectID]._disappeared += 1
 
                 # if we have reached a maximum number of consecutive
                 # frames where a given object has been marked as
                 # missing, deregister it
-                if self.disappeared[objectID] > self.maxDisappeared:
+                if self.objects[objectID]._disappeared > self.maxDisappeared:
                     self.deregister(objectID)
 
             # return early as there are no centroids or tracking info
@@ -116,21 +118,17 @@ class CentroidTracker(QThread):
             return self.objects
 
         # initialize an array of input centroids for the current frame
-        inputCentroids = np.zeros((len(self.rects), 2), dtype="int")
-
-        # loop over the bounding box rectangles
-        for (i, rect) in enumerate(self.rects):
-            (startX, startY, endX, endY) = rect[:4]
-            # use the bounding box coordinates to derive the centroid
-            cX = int((startX + (startX + endX)) / 2.0)  # x1+x2 /2
-            cY = int((startY + (startY + endY)) / 2.0)  # y1+y2 /2
-            inputCentroids[i] = (cX, cY)
+        # inputCentroids = np.zeros((len(self.Blobs), 2), dtype="int")
+        # loop over the ROIs
+        inputCentroids = []
+        for Blob in self.Blobs:
+            inputCentroids.append(Blob._centroid)
 
         # if we are currently not tracking any objects take the input
         # centroids and register each of them
         if len(self.objects) == 0:
-            for i in range(0, len(inputCentroids)):
-                self.register(inputCentroids[i])
+            for Blob in self.Blobs :
+                self.register(Blob)
 
         # otherwise, are are currently tracking objects so we need to
         # try to match the input centroids to existing object
@@ -138,13 +136,17 @@ class CentroidTracker(QThread):
         else:
             # grab the set of object IDs and corresponding centroids
             objectIDs = list(self.objects.keys())
-            objectCentroids = list(self.objects.values())
+
+            objectCentroids = []
+
+            for Blob in self.objects.values():
+                objectCentroids.append(Blob._centroid)
 
             # compute the distance between each pair of object
             # centroids and input centroids, respectively -- our
             # goal will be to match an input centroid to an existing
             # object centroid
-            D = dist.cdist(np.array(objectCentroids), inputCentroids)
+            D = dist.cdist(np.array(objectCentroids), np.array(inputCentroids))
 
             # in order to perform this matching we must (1) find the
             # smallest value in each row and then (2) sort the row
@@ -178,10 +180,11 @@ class CentroidTracker(QThread):
                 # set its new centroid, and reset the disappeared
                 # counter
                 objectID = objectIDs[row]
-                self.objects[objectID] = inputCentroids[col]
-                self.disappeared[objectID] = 0
-                # if objectID == 1:
-                #print("objectID" , objectID, D[row,col])
+                self.objects[objectID]._centroid = inputCentroids[col]
+                self.objects[objectID]._disappeared = 0
+                if objectID in self.disappeared:
+                    self.disappeared.remove(objectID)
+
                 distances.append(D[row, col])
 
                 # indicate that we have examined each of the row and
@@ -205,12 +208,15 @@ class CentroidTracker(QThread):
                     # grab the object ID for the corresponding row
                     # index and increment the disappeared counter
                     objectID = objectIDs[row]
-                    self.disappeared[objectID] += 1
+                    self.objects[objectID]._disappeared += 1
+
+                    if objectID not in self.disappeared:
+                        self.disappeared.append(objectID)
 
                     # check to see if the number of consecutive
                     # frames the object has been marked "disappeared"
                     # for warrants deregistering the object
-                    if self.disappeared[objectID] > self.maxDisappeared:
+                    if self.objects[objectID]._disappeared > self.maxDisappeared:
                         self.deregister(objectID)
 
             # otherwise, if the number of input centroids is greater
@@ -218,13 +224,10 @@ class CentroidTracker(QThread):
             # register each new input centroid as a trackable object
             else:
                 for col in unusedCols:
-                    self.register(inputCentroids[col])
+                    self.register(self.Blobs[col])
 
         self.EuclideansReady()
-        self.showTrackedObjects()
         self.stopTimer()
-        # self.signals.result.emit(self.getEuclideans())
-        #self.signals.result.emit(self.objects)
         self.signals.finished.emit()
 
         # return the set of trackable objects
