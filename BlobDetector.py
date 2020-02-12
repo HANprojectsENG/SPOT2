@@ -26,7 +26,7 @@ class BlobDetector(Manipulator):
     
     def __init__(self, *args, **kwargs):
         """The constructor."""
-        super().__init__()
+        super().__init__("blob detector")
 
         # Blob area filtering parameters minBlobArea
         self.minBlobArea = kwargs['minBlobArea'] if 'minBlobArea' in kwargs else 10
@@ -45,7 +45,7 @@ class BlobDetector(Manipulator):
         self.plot = kwargs['plot'] if 'plot' in kwargs else False
 
         if self.plot:
-            cv2.namedWindow(__name__)
+            cv2.namedWindow(self.name)
             plt.show(block=False)
 
         """TODO: Add var rects -> detected blobs/rectangles"""
@@ -64,7 +64,7 @@ class BlobDetector(Manipulator):
         \return image (the annotated image )
 
          local variable is the list of detected blobs with the following feature columns:
-         [bb_left,bb_top,bb_width,bb_height, cc_area, sharpness, SNR, perimeter]
+         [bb_left,bb_top,bb_width,bb_height, cc_area, sharpness, SNR]
 
          Sharpness is variation of the Laplacian (introduced by Pech-Pacheco
          "Diatom autofocusing in brightfield microscopy: a comparative study."
@@ -119,9 +119,9 @@ class BlobDetector(Manipulator):
                     # Local SNR column
                     blob[6] = int((I_0-I_b)/np.sqrt(I_b)) if I_b>0 else 0
 
-                    # Perimeter, pretty slow
+                    # Perimeter
                     tempBWImage = BWImage[tl[1]:br[1], tl[0]:br[0]]
-                    contours, _ = cv2.findContours(tempBWImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                    contours, _ = cv2.findContours(tempBWImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
                     contour = max(contours, key=cv2.contourArea) # select largest contour
                     blob[7] = len(contour)
 
@@ -136,7 +136,7 @@ class BlobDetector(Manipulator):
 
             # Plot last ROI
             if self.plot:
-                cv2.imshow(__name__, BWImage)    
+                cv2.imshow(self.name, BWImage)    
                     
             # Finalize
             self.stopTimer()
@@ -145,7 +145,7 @@ class BlobDetector(Manipulator):
         except Exception as err:
             exc = traceback.format_exception(type(err), err, err.__traceback__, chain=False)
             self.signals.error.emit(exc)
-            self.signals.message.emit('E: {} exception: {}'.format(__name__, err))
+            self.signals.message.emit('E: {} exception: {}'.format(self.name, err))
 
         return self.image
 

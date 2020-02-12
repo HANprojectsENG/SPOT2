@@ -10,7 +10,7 @@ import os
 import numpy as np
 import cv2
 from checkOS import is_raspberry_pi
-from objectSignals import ObjectSignals
+from objectSignals import *
 import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
@@ -18,7 +18,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import time
 
 class MainWindow(QWidget):
     '''
@@ -59,7 +58,7 @@ class MainWindow(QWidget):
         
         # a figure instance to plot on
         self.canvas = FigureCanvas(Figure()) #(figsize=(5, 3)))
-        self.axes = self.canvas.figure.subplots(2, 2, sharex=True, sharey=True)
+        self.axes = self.canvas.figure.subplots(2, 2, sharex=False, sharey=False)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
@@ -210,8 +209,8 @@ class MainWindow(QWidget):
             self.PixImage.show()
 
     @Slot(int, np.ndarray, np.ndarray)
-    def updatePlot(self, quadrant, x, y):
-        if not (y is None):
+    def updatePlot(self, figType, quadrant, x, y):
+        if not (y is None) or not (x is None):
             # select axes
             if quadrant == 1:
                 axes = self.axes[0, 1]
@@ -223,10 +222,30 @@ class MainWindow(QWidget):
                 axes = self.axes[1, 1]
             # plot new data
             axes.clear()
-            if x is None:
-                axes.plot(y)
-            else:
-                axes.plot(x, y)
+            if (figType is FigureTypes.LINEAR) or (figType is None): 
+                if x is None:
+                    axes.plot(y)
+                else:
+                    axes.plot(x, y)
+
+            elif figType == FigureTypes.SCATTER:
+                if not(x is None):
+                    #scatter plot
+                    t = np.arange(0, 100, 1)
+                    length = len(x) - 100
+
+                    axes.scatter(t, x[length:len(x)], c="blue", alpha=0.5)
+                    axes.set_xlabel('frame')
+                    axes.set_ylabel('Distance')
+
+            elif figType == FigureTypes.HISTOGRAM:
+                #hist
+                if not(x is None):
+                    # y_hist, n = np.histogram(y, bins=100, range=(0,500))
+                    # axes.plot(y_hist)
+                    axes.hist(x, 30, density=True, facecolor="blue", alpha=0.5)
+                    #axes.set_xlabel('Distance')
+                    # aes.set_ylabel('Occurance')
             axes.figure.canvas.draw()            
 
     @Slot()
@@ -254,7 +273,6 @@ class MainWindow(QWidget):
     def closeEvent(self, event: QCloseEvent):
         self.saveSettings()
         self.signals.finished.emit()
-        time.sleep(1)
         event.accept()        
 
     def snapshot(self):

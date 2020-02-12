@@ -56,7 +56,7 @@ class VideoStream(QThread):
                     if ok:
                         self.signals.result.emit(frame)
                     # Wait a bit
-                    cv2.waitKey(100)
+                    cv2.waitKey(10)
         except Exception as err:
             traceback.print_exc()
             self.signals.error.emit((type(err), err.args, traceback.format_exc()))

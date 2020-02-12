@@ -26,7 +26,7 @@ class ImageEnhancer(Manipulator):
     """
     def __init__(self, *args, **kwargs):
         """The constructor."""
-        super().__init__()
+        super().__init__('image enhancer')
 
         # Set crop area to (p1_y, p1_x, p2_y, p2_x)
         self.cropRect = kwargs['cropRect'] if 'cropRect' in kwargs else [0,0,0,0]
@@ -94,7 +94,7 @@ class ImageEnhancer(Manipulator):
         except Exception as err:
             exc = traceback.format_exception(type(err), err, err.__traceback__, chain=False)
             self.signals.error.emit(exc)
-            self.signals.message.emit('E: {} exception: {}'.format(__name__, err))
+            self.signals.message.emit('E: {} exception: {}'.format(self.name, err))
 
         return self.image
 

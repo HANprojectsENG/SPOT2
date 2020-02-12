@@ -10,14 +10,12 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 import numpy as np
 import cv2
-import time
 import traceback
 from imageEnhancer import ImageEnhancer
 from imageSegmenter import ImageSegmenter
 from BlobDetector import BlobDetector
 from objectSignals import ObjectSignals
 from PySide2.QtCore import QThread
-import time
 
 
 class ImageProcessor(QThread):
@@ -35,6 +33,7 @@ class ImageProcessor(QThread):
     def __init__(self):
         super().__init__()
 
+        self.name = 'image processor'
         self.image = None
         self.signals = ObjectSignals()
         self.isStopped = False
@@ -56,29 +55,27 @@ class ImageProcessor(QThread):
             if self.isRunning():
                 # thread is already running
                 # drop frame
-                self.signals.message.emit('I: {} busy, frame dropped'.format(__name__))
+                self.signals.message.emit('I: {} busy, frame dropped'.format(self.name))
             elif image is not None:
                 # we have a new image
                 self.image = image #.copy()        
-                self.start(QThread.HighPriority)
+                self.start()
                 
         except Exception as err:
             traceback.print_exc()
             self.signals.error.emit((type(err), err.args, traceback.format_exc()))
 
        
-    # @Slot()
+    @Slot()
     def run(self):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
         if not self.isStopped and self.image is not None:
-            self.signals.message.emit('I: Running worker "{}"\n'.format(__name__))
+            self.signals.message.emit('I: Running worker "{}"\n'.format(self.name))
            
             # Retrieve args/kwargs here; and fire processing using them
             try:
-                self.startTimer()                
-
                 # Enhance image
                 self.image = self.enhancer.start(self.image)
                 
@@ -100,31 +97,18 @@ class ImageProcessor(QThread):
                 self.signals.resultBlobs.emit(result,self.detector.blobs)
                 self.signals.result.emit(result)  # Return the result of the processing
             finally:
-                self.stopTimer()
                 self.signals.finished.emit()  # Done
                 
     @Slot()
     def stop(self):
         if self.isRunning():
-            self.signals.message.emit('I: Stopping worker "{}"\n'.format(__name__))
+            self.signals.message.emit('I: Stopping worker "{}"\n'.format(self.name))
             self.isStopped = True
             self.quit()
 
     @Slot(bool)
     def setDetector(self, val):
         self.gridDetection = val        
-
-
-    def startTimer(self):
-        """Start millisecond timer."""        
-        self.startTime = int(round(time.time() * 1000))
-        self.signals.message.emit('I: {} started'.format(__name__))            
-        
-
-    def stopTimer(self):
-        """Stop millisecond timer."""        
-        self.processsingTime = int(round(time.time() * 1000)) - self.startTime
-        self.signals.message.emit('I: {} finished in {} ms'.format(__name__, self.processsingTime))        
 
 
             
